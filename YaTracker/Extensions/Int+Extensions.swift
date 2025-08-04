@@ -6,3 +6,18 @@
 //
 
 import Foundation
+
+extension Int {
+    var dayStringRU: String {
+        let mod10 = self % 10
+        let mod100 = self % 100
+        
+        if mod10 == 1 && mod100 != 11 {
+            return "\(self) день"
+        } else if (2...4).contains(mod10) && !(12...14).contains(mod100) {
+            return "\(self) дня"
+        } else {
+            return "\(self) дней"
+        }
+    }
+}

@@ -17,11 +17,10 @@ final class DoneButton: UIButton {
     override init(frame: CGRect) {
         super.init(frame: frame)
         super.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        super.setTitleColor(.ypWhite, for: .normal)
         super.backgroundColor = isEnabled ? .ypBlackDay : .ypGray
         super.layer.cornerRadius = 16
         super.tintColor = .ypWhite
-        
-
     }
     
     required init?(coder: NSCoder) {

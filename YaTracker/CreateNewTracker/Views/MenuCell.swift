@@ -7,23 +7,52 @@
 
 import UIKit
 
+protocol MenuCellDelegate: AnyObject {
+    func userIsTypingSomeBullshit(_ text: String, _ limitReached: Bool)
+}
+
 final class MenuCell: UITableViewCell {
     
-//    weak var delegate: MenuCellDelegate?
+    static let reuseIdentifier = "NotSoUniqueIdentifierForMenuCells"
     
-    static let reuseIdentifier = "MenuCell"
+    weak var delegate: MenuCellDelegate?
     
-    var textFieldText: String?
-    var isToggleOn: Bool?
+    var menuItem: MenuItem?
     
-    private lazy var HStackView: UIStackView = {
+    private lazy var titleLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 17, weight: .regular)
+        label.textColor = .ypBlackDay
+        return label
+    }()
+    
+    private lazy var descriptionLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 17, weight: .regular)
+        label.textColor = .ypGray
+        return label
+    }()
+    
+    private lazy var toggleSwitch: UISwitch = {
+        let toggle = UISwitch()
+        toggle.onTintColor = .ypBlue
+        toggle.isUserInteractionEnabled = false
+        return toggle
+    }()
+    
+    private lazy var searchTextField: NewTrackerTextField = {
+        let textField = NewTrackerTextField() { self.delegate?.userIsTypingSomeBullshit($0, $1) }
+        return textField
+    }()
+    
+    private lazy var hStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .horizontal
         stackView.distribution = .equalSpacing
         return stackView
     }()
     
-    private lazy var VStackView: UIStackView = {
+    private lazy var vStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
         stackView.distribution = .fillProportionally
@@ -39,79 +68,50 @@ final class MenuCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configureCell(with cellItem: MenuItem) {
+    func configureCell(with cellItem: MenuItem, delegate: MenuCellDelegate?) {
+        menuItem = cellItem
+        self.delegate = delegate
         switch cellItem {
-        case .textField(let placeholder):
-            addTextField(placeholder: placeholder)
+        case .textField(let placeholder, let limit):
+            addTextField(placeholder: placeholder, limit: limit)
         case .navigationLink(let title, let description, let destination):
             addNavigationLink(title: title, description: description, destination: destination)
-        case .weekDay(text: let weekDay, toggle: let isOn):
-//            addLabel(text: weekDay)
-//            addToggle(isOn: isOn)
+        case .weekDaySelector(toggle: let isOn, day: let weekDay):
             addWeekDay(weekDay: weekDay, toggle: isOn)
         }
     }
     
-    func toggleTheToggle() {
-        guard let toggle = self.viewWithTag(100) as? UISwitch else { return }
-        toggle.setOn(!toggle.isOn, animated: true)
+    func updateDescriptionLabel(with text: String?) {
+        descriptionLabel.text = text
     }
     
-    private func addTextField(placeholder: String?) {
-        let textField: UITextField = {
-            let textField = UITextField()
-            textField.placeholder = placeholder
-            textField.textColor = .ypBlack
-            textField.delegate = self
-            return textField
-        }()
-        VStackView.addArrangedSubview(textField)
+    func toggleTheToggle() {
+        toggleSwitch.setOn(!toggleSwitch.isOn, animated: true)
+    }
+    
+    func selectTextField() {
+        searchTextField.becomeFirstResponder()
+    }
+    
+    private func addTextField(placeholder: String?, limit: Int) {
+        searchTextField.placeholder = placeholder
+        searchTextField.maxLength = limit
+        vStackView.addArrangedSubview(searchTextField)
     }
     
     private func addNavigationLink(title: String, description: String?, destination: NavDestination) {
-        addLabel(text: title)
-        addLabel(text: description, color: .ypGray)
+        titleLabel.text = title
+        vStackView.addArrangedSubview(titleLabel)
+        descriptionLabel.text = description
+        vStackView.addArrangedSubview(descriptionLabel)
         accessoryType = .disclosureIndicator
     }
     
-    private func addWeekDay(weekDay: String, toggle: Bool) {
-        addLabel(text: weekDay)
-        addToggle(isOn: toggle)
-    }
-    
-    private func addLabel(text: String?, color: UIColor? = .ypBlackDay) {
-        guard let text else { return }
-        let label: UILabel = {
-            let label = UILabel()
-            label.font = .systemFont(ofSize: 17, weight: .regular)
-            label.textColor = color
-            label.text = text
-            return label
-        }()
-        VStackView.addArrangedSubview(label)
-    }
-    
-    private func addToggle(isOn: Bool) {
-        let toggle: UISwitch = {
-            let toggle = UISwitch()
-            toggle.addTarget(self, action: #selector(toggleValueChanged), for: .valueChanged)
-            toggle.tag = 100
-            return toggle
-        }()
-        toggle.isOn = isOn
-        HStackView.addArrangedSubview(toggle)
-    }
-    
-    @objc private func toggleValueChanged(_ sender: UISwitch) {
-        isToggleOn = sender.isOn
-    }
-}
-
-extension MenuCell: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        textFieldText = textField.text
-        return true
+    private func addWeekDay(weekDay: WeekDay, toggle: Bool) {
+        titleLabel.text = weekDay.rawValue
+        vStackView.addArrangedSubview(titleLabel)
+        toggleSwitch.isOn = toggle
+        hStackView.addArrangedSubview(toggleSwitch)
     }
 }
 
@@ -119,16 +119,16 @@ extension MenuCell {
     private func setupCell() {
         backgroundColor = .ypBackgroundDay
         
-        HStackView.addArrangedSubview(VStackView)
-        contentView.addSubview(HStackView)
+        hStackView.addArrangedSubview(vStackView)
+        contentView.addSubview(hStackView)
         
-        HStackView.translatesAutoresizingMaskIntoConstraints = false
+        hStackView.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            HStackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
-            HStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            HStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            HStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
+            hStackView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            hStackView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            hStackView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+            hStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -16)
         ])
     }
 }

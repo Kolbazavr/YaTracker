@@ -5,12 +5,13 @@
 //  Created by ANTON ZVERKOV on 29.07.2025.
 //
 
-import Foundation
+import UIKit
 
 struct Tracker: Hashable {
     let id: UUID
     let name: String
-    let color: String
+    let color: UIColor
     let emoji: String
-    let schedule: [String: String]
+    let schedule: [WeekDay]
+    let isPinned: Bool
 }
