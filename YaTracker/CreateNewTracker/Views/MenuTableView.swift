@@ -12,7 +12,7 @@ final class MenuTableView: UITableView {
     weak var menuSelectionDelegate: MenuTableViewDelegate?
     weak var menuTextFieldDelegate: MenuTextFieldDelegate?
     
-    var allMenuItems: [MenuItem] = []
+    var allMenuItems: [[MenuItem]] = []
     
     private var limitWarningShown: Bool = false
     private var texFieldsLimit: Int
@@ -39,7 +39,7 @@ final class MenuTableView: UITableView {
     }
     
     func addMenuItems(_ menuItems: [MenuItem]) {
-        self.allMenuItems = menuItems
+        self.allMenuItems = separateToSections(menuItems)
         reloadData()
     }
     
@@ -56,8 +56,10 @@ final class MenuTableView: UITableView {
         register(MenuCell.self, forCellReuseIdentifier: MenuCell.reuseIdentifier)
     }
     
-    private func menuItems(for section: Int) -> [MenuItem] {
-        allMenuItems.filter { $0.typeName == allMenuItems[section].typeName }
+    private func separateToSections(_ menuItems: [MenuItem]) -> [[MenuItem]] {
+        menuItems.reduce(into: []) { result, item in
+            result.last?.last?.typeName == item.typeName ? result[result.count - 1].append(item) :  result.append([item])
+        }
     }
 }
 
@@ -77,18 +79,18 @@ extension MenuTableView: MenuCellDelegate {
 
 extension MenuTableView: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        menuItems(for: section).count
+        allMenuItems[section].count
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {
-        Set(allMenuItems.map { $0.typeName }).count
+        allMenuItems.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: MenuCell.reuseIdentifier, for: indexPath) as? MenuCell else {
             return UITableViewCell()
         }
-        let item = menuItems(for: indexPath.section)[indexPath.row]
+        let item = allMenuItems[indexPath.section][indexPath.row]
         cell.configureCell(with: item, delegate: self)
         return cell
     }
@@ -101,18 +103,19 @@ extension MenuTableView: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let menuItem = menuItems(for: indexPath.section)[indexPath.row]
+        let menuItem = allMenuItems[indexPath.section][indexPath.row]
         let selectedCell = tableView.cellForRow(at: indexPath) as? MenuCell
         
         menuSelectionDelegate?.didSelectMenuItem(menuItem, at: selectedCell)
     }
     
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        guard case .textField = allMenuItems[section] else { return nil }
+        guard case .textField = allMenuItems[section].first else { return nil }
         return footerWarningLabel
     }
     
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        limitWarningShown ? footerHeight : 0
+        guard case .textField = allMenuItems[section].first else { return 0 }
+        return limitWarningShown ? footerHeight : 0
     }
 }

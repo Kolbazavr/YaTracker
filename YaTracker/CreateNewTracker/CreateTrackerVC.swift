@@ -132,8 +132,7 @@ extension CreateTrackerVC: ScheduleVCDelegate {
     func didSelectWeekDays(_ weekDay: Set<WeekDay>) {
         selectedWeekDays = weekDay
         
-        let scheduleString = weekDay.count == 7 ? "Каждый день" : weekDay.sorted().map { $0.shortName } .joined(separator: ", ")
-        
+        let scheduleString = WeekDay.daysString(from: weekDay)
         tableView.updateDescriprion(at: IndexPath(row: 1, section: 1), with: scheduleString)
         checkIsAllFieldsFilled()
     }

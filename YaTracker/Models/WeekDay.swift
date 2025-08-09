@@ -62,3 +62,9 @@ extension WeekDay {
         }
     }
 }
+
+extension WeekDay {
+    static func daysString(from weekdays: Set<WeekDay>) -> String {
+        weekdays.count == 7 ? "Каждый день" : weekdays.sorted().map { $0.shortName } .joined(separator: ", ")
+    }
+}

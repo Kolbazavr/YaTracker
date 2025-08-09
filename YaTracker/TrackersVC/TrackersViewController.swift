@@ -25,7 +25,7 @@ final class TrackersViewController: UIViewController {
     private var collectionView: UICollectionView!
     private var dataSource: TrackerDataSource!
    
-    private var selectedDate: Date = Date()
+    private var selectedDate: Date = Date().onlyDate
     private var completedTrackers: Set<TrackerRecord> = []
     private var categories: Set<TrackerCategory> = [] { didSet { search(.byDay(WeekDay(from: selectedDate))) } }
     private var filteredCategories: [TrackerCategory] = [] { didSet { showStub(filteredCategories.isEmpty) } }
@@ -147,12 +147,10 @@ extension TrackersViewController: CreateTrackerVCDelegate {
     func didCreatedNewTracker(_ tracker: Tracker, in category: String) {
         var categoryToInsert = TrackerCategory(title: category, trackers: [tracker])
         if let existing = categories.remove(categoryToInsert) {
-            let trackers = existing.trackers + [tracker]
-            categoryToInsert = TrackerCategory(title: category, trackers: trackers)
+            categoryToInsert = TrackerCategory(title: category, trackers: existing.trackers + [tracker])
         }
         categories.insert(categoryToInsert)
         searchTextField.text = nil
-        search(.byDay(WeekDay(from: selectedDate)))
         tapDetector.isUserInteractionEnabled = false
         applySnapshot(for: filteredCategories)
     }
@@ -204,7 +202,7 @@ extension TrackersViewController: TrackerCellDelegate {
         let _ = completedTrackers.remove(record) ?? completedTrackers.insert(record).memberAfterInsert
         var snapshot = dataSource.snapshot()
         snapshot.reconfigureItems([tracker])
-        dataSource.apply(snapshot, animatingDifferences: false)
+        dataSource.apply(snapshot, animatingDifferences: true)
     }
 }
 
@@ -212,12 +210,11 @@ extension TrackersViewController: TrackerCellDelegate {
 extension TrackersViewController {
     private func configureDataSource() {
         let cellRegistration = UICollectionView.CellRegistration<TrackerCellCard, Tracker> { cell, indexPath, tracker in
+            let records = self.completedTrackers.filter({ $0.trackerId == tracker.id })
+            let isCompletedToday = records.contains(where: { $0.completionDate == self.selectedDate })
             
-            let isCompletedToday = self.completedTrackers.contains(where: { $0.trackerId == tracker.id && $0.completionDate == self.selectedDate.onlyDate })
-            
-            let completedCount = self.completedTrackers.filter({ $0.trackerId == tracker.id }).count
-            let enableButton = Calendar.current.isDateInToday(self.selectedDate) || self.selectedDate < Date()
-            cell.configure(with: tracker, isCompletedToday: isCompletedToday, daysCompleted: completedCount, enableButton: enableButton)
+            let enableButton = self.selectedDate <= Date()
+            cell.configure(with: tracker, isCompletedToday: isCompletedToday, daysCompleted: records.count, enableButton: enableButton)
             cell.delegate = self
         }
         
@@ -231,10 +228,7 @@ extension TrackersViewController {
         })
         
         dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
-            if kind == UICollectionView.elementKindSectionHeader {
-                return collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
-            }
-            return nil
+            kind == UICollectionView.elementKindSectionHeader ? collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath) : nil
         }
     }
     
@@ -242,7 +236,8 @@ extension TrackersViewController {
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .fractionalHeight(1.0))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(148))
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(90 + 58))
+        
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, repeatingSubitem: item, count: 2)
         group.interItemSpacing = .fixed(9)
         
@@ -250,7 +245,7 @@ extension TrackersViewController {
         section.interGroupSpacing = 0
         section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 16, trailing: 16)
         
-        let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(30))
+        let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(headerHeight))
         let header = NSCollectionLayoutBoundarySupplementaryItem(
             layoutSize: headerSize,
             elementKind: UICollectionView.elementKindSectionHeader,
@@ -264,9 +259,7 @@ extension TrackersViewController {
     private func applySnapshot(for categories: [TrackerCategory], animated: Bool = true) {
         var snapshot = TrackerSnapshot()
         snapshot.appendSections(categories)
-        for category in categories {
-            snapshot.appendItems(category.trackers, toSection: category)
-        }
+        categories.forEach { snapshot.appendItems($0.trackers, toSection: $0) }
         snapshot.reconfigureItems(snapshot.itemIdentifiers)
         dataSource.apply(snapshot, animatingDifferences: animated)
     }
@@ -309,8 +302,6 @@ extension TrackersViewController {
         let tapRecognizer: UITapGestureRecognizer = .init(target: self, action: #selector(dismissEditingThingys))
         tapRecognizer.cancelsTouchesInView = false
         tapDetector.addGestureRecognizer(tapRecognizer)
-        
-        tapDetector.translatesAutoresizingMaskIntoConstraints = false
         
         [searchTextField, trackersLabel, tapDetector, topStackView, calendarView].forEach {
             view.addSubview($0)
