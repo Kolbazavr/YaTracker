@@ -131,7 +131,7 @@ final class TrackersViewController: UIViewController {
         createTrackerViewController.delegate = self
         
         let navigationController = UINavigationController(rootViewController: createTrackerViewController)
-        navigationController.modalPresentationStyle = .pageSheet
+        navigationController.modalPresentationStyle = .automatic
         navigationController.navigationBar.isHidden = true
         present(navigationController, animated: true)
     }
@@ -220,7 +220,7 @@ extension TrackersViewController {
         
         let headerRegistration = UICollectionView.SupplementaryRegistration<CollectionViewHeader>(elementKind: UICollectionView.elementKindSectionHeader) { headerView, _, indexPath in
             let category = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
-            headerView.configure(with: category)
+            headerView.configure(with: category.title)
         }
         
         dataSource = TrackerDataSource(collectionView: collectionView, cellProvider: { collectionView, indexPath, tracker in

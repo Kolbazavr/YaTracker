@@ -69,8 +69,9 @@ final class ScheduleVC: UIViewController {
         view.addSubview(doneButton)
         
         NSLayoutConstraint.activate([
-            headerTitle.topAnchor.constraint(equalTo: view.topAnchor, constant: 27),
+            headerTitle.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
             headerTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            headerTitle.heightAnchor.constraint(equalToConstant: 79),
             
             tableView.topAnchor.constraint(equalTo: headerTitle.bottomAnchor, constant: 0),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),

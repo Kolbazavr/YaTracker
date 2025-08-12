@@ -25,11 +25,16 @@ final class CreateTrackerVC: UIViewController {
     
     private var trackerName: String?
     private var selectedWeekDays: Set<WeekDay> = []
+    private var selectedEmoji: String?
+    private var selectedColor: UIColor?
     private var selectedCategory: String?
+    
+    private var footerView: UIView?
     
     private let maxTextLength: Int
     private let headerTitle = UILabel()
     private let tableView: MenuTableView
+    private let decorCollectionView: DecorCollectionView
     
     private lazy var doneButton: UIButton = {
         let button = DoneButton(type: .system)
@@ -48,6 +53,7 @@ final class CreateTrackerVC: UIViewController {
     init(textLimit: Int = 38) {
         self.maxTextLength = textLimit
         self.tableView = MenuTableView(texFieldsLimit: self.maxTextLength)
+        self.decorCollectionView = DecorCollectionView()
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -57,25 +63,39 @@ final class CreateTrackerVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupUI()
         setupTableViewItems()
         checkIsAllFieldsFilled()
-        setupUI()
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard footerView == nil else { return }
+        footerView = ButtonsView(buttons: [cancelButton, doneButton], frame: CGRect(x: 0, y: 0, width: tableView.bounds.width, height: 60 + 16))
+        tableView.tableFooterView = footerView
     }
     
     private func setupTableViewItems() {
         let menuItem1: MenuItem = .textField(placeholder: "Введите название трекера", limit: maxTextLength)
         let menuItem2: MenuItem = .navigationLink(title: "Категория", description: nil, destination: .categories)
         let menuItem3: MenuItem = .navigationLink(title: "Расписание", description: nil, destination: .schedule)
+        let menuItem4: MenuItem = .decorCollection(collectionDelegate: self)
         
-        let allMenuItems: [MenuItem] = [menuItem1, menuItem2, menuItem3]
+        let allMenuItems: [MenuItem] = [menuItem1, menuItem2, menuItem3, menuItem4]
         
-        tableView.addMenuItems(allMenuItems)
         tableView.menuSelectionDelegate = self
         tableView.menuTextFieldDelegate = self
+        tableView.addMenuItems(allMenuItems)
     }
     
     private func checkIsAllFieldsFilled() {
-        doneButton.isEnabled = trackerName != nil && trackerName != "" && !selectedWeekDays.isEmpty && selectedCategory != nil
+        doneButton.isEnabled =
+        trackerName != nil &&
+        trackerName != "" &&
+        !selectedWeekDays.isEmpty &&
+        selectedCategory != nil &&
+        selectedEmoji != nil &&
+        selectedColor != nil
     }
     
     private func navigate(to destination: NavDestination) {
@@ -88,11 +108,12 @@ final class CreateTrackerVC: UIViewController {
     
     @objc private func didTapDoneButton() {
         guard let trackerName, let selectedCategory, !selectedWeekDays.isEmpty else { return }
+        
         let newTracker = Tracker(
             id: UUID(),
             name: trackerName,
-            color: .colorSelection15,
-            emoji: "🏄🏼",
+            color: selectedColor ?? .black,
+            emoji: selectedEmoji ?? "",
             schedule: selectedWeekDays.sorted(),
             isPinned: false
         )
@@ -128,10 +149,21 @@ extension CreateTrackerVC: MenuTextFieldDelegate {
     }
 }
 
+extension CreateTrackerVC: DecorCollectionViewDelegate {
+    func didTapedOnDecor(_ decor: DecorType, wasSelected: Bool) {
+        switch decor {
+        case .emoji(let string):
+            selectedEmoji = wasSelected ? string : nil
+        case .colorHex(let string):
+            selectedColor = wasSelected ? UIColor(hexString: string) : nil
+        }
+        checkIsAllFieldsFilled()
+    }
+}
+
 extension CreateTrackerVC: ScheduleVCDelegate {
     func didSelectWeekDays(_ weekDay: Set<WeekDay>) {
         selectedWeekDays = weekDay
-        
         let scheduleString = WeekDay.daysString(from: weekDay)
         tableView.updateDescriprion(at: IndexPath(row: 1, section: 1), with: scheduleString)
         checkIsAllFieldsFilled()
@@ -163,29 +195,15 @@ extension CreateTrackerVC {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
         
-        let HStackView: UIStackView = {
-            let stackView = UIStackView(arrangedSubviews: [cancelButton, doneButton])
-            stackView.axis = .horizontal
-            stackView.distribution = .fillEqually
-            stackView.spacing = 8
-            return stackView
-        }()
-        HStackView.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(HStackView)
-        
         NSLayoutConstraint.activate([
-            headerTitle.topAnchor.constraint(equalTo: view.topAnchor, constant: 27),
+            headerTitle.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
             headerTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            headerTitle.heightAnchor.constraint(equalToConstant: 79),
             
             tableView.topAnchor.constraint(equalTo: headerTitle.bottomAnchor, constant: 0),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0),
-            
-            HStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 0),
-            HStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            HStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            HStackView.heightAnchor.constraint(equalToConstant: 60),
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 0),
         ])
     }
 }

@@ -9,9 +9,7 @@ import UIKit
 
 final class DoneButton: UIButton {
     override var isEnabled: BooleanLiteralType {
-        didSet {
-            super.backgroundColor = isEnabled ? .ypBlackDay : .ypGray
-        }
+        didSet { super.backgroundColor = isEnabled ? .ypBlackDay : .ypGray }
     }
     
     override init(frame: CGRect) {

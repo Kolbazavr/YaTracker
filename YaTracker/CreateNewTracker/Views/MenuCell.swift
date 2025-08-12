@@ -78,6 +78,7 @@ final class MenuCell: UITableViewCell {
             addNavigationLink(title: title, description: description, destination: destination)
         case .weekDaySelector(toggle: let isOn, day: let weekDay):
             addWeekDay(weekDay: weekDay, toggle: isOn)
+        default: break
         }
     }
     
