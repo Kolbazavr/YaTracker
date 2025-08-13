@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum WeekDay: String, CaseIterable, Comparable {
+enum WeekDay: String, CaseIterable, Comparable, Codable {
     static func < (lhs: WeekDay, rhs: WeekDay) -> Bool {
         return lhs.sortOrder < rhs.sortOrder
     }

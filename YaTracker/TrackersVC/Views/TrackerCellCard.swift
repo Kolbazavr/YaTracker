@@ -88,13 +88,13 @@ final class TrackerCellCard: UICollectionViewCell {
     
     func configure(with tracker: Tracker, isCompletedToday: Bool, daysCompleted: Int, enableButton: Bool) {
         self.tracker = tracker
-        colorBackgroundView.backgroundColor = tracker.color
+        colorBackgroundView.backgroundColor = UIColor(hexString: tracker.colorHex)
         trackerNameLabel.text = tracker.name
         emojiLabel.text = tracker.emoji
         isPinned = tracker.isPinned
         pinImageView.isHidden = !isPinned
         
-        doneButton.backgroundColor = tracker.color.withAlphaComponent(isCompletedToday ? 0.3 : 1.0)
+        doneButton.backgroundColor = UIColor(hexString: tracker.colorHex, alpha: isCompletedToday ? 0.3 : 1.0)
         doneButton.setImage(UIImage(resource: isCompletedToday ? .cellCheckMark : .cellPlus), for: .normal)
         doneButton.tintColor = .ypWhite
         doneButton.isEnabled = enableButton

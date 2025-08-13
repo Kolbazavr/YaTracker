@@ -26,7 +26,7 @@ final class CreateTrackerVC: UIViewController {
     private var trackerName: String?
     private var selectedWeekDays: Set<WeekDay> = []
     private var selectedEmoji: String?
-    private var selectedColor: UIColor?
+    private var selectedColor: String?
     private var selectedCategory: String?
     
     private var footerView: UIView?
@@ -112,7 +112,7 @@ final class CreateTrackerVC: UIViewController {
         let newTracker = Tracker(
             id: UUID(),
             name: trackerName,
-            color: selectedColor ?? .black,
+            colorHex: selectedColor ?? "",
             emoji: selectedEmoji ?? "",
             schedule: selectedWeekDays.sorted(),
             isPinned: false
@@ -155,7 +155,7 @@ extension CreateTrackerVC: DecorCollectionViewDelegate {
         case .emoji(let string):
             selectedEmoji = wasSelected ? string : nil
         case .colorHex(let string):
-            selectedColor = wasSelected ? UIColor(hexString: string) : nil
+            selectedColor = wasSelected ? string : nil
         }
         checkIsAllFieldsFilled()
     }
