@@ -33,7 +33,7 @@ final class DataProvider: NSObject {
         return fetchedResultsController
     }()
     
-    init(context: NSManagedObjectContext = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext) {
+    init(context: NSManagedObjectContext) {
         self.context = context
     }
     
@@ -61,7 +61,7 @@ final class DataProvider: NSObject {
             newTracker.colorHex = tracker.colorHex
             newTracker.emoji = tracker.emoji
             newTracker.isPinned = tracker.isPinned
-            newTracker.schedule = try? JSONEncoder().encode(tracker.schedule)
+            newTracker.schedule = tracker.schedule.bitmask
             newTracker.category = categoryToInsert
             
             saveContext()
@@ -90,30 +90,28 @@ final class DataProvider: NSObject {
         return (try? context.count(for: request)) ?? 0
     }
     
-    func isTrackerCompletedToday(_ trackerId: UUID, date: Date) -> Bool {
-        let request: NSFetchRequest<TrackerRecordCoreData> = TrackerRecordCoreData.fetchRequest()
-        request.predicate = NSPredicate(format: "trackerId == %@ AND completionDate == %@", trackerId as CVarArg, date as CVarArg)
+    func getCompletedTrackersCountDerived(for trackerId: UUID) -> Int {
+        let request = NSFetchRequest<NSDictionary>(entityName: "TrackerCoreData")
+        request.predicate = NSPredicate(format: "id == %@", trackerId as CVarArg)
+        request.resultType = .dictionaryResultType
+        request.propertiesToFetch = ["recordsCount"]
         
+        let result = try? context.fetch(request).first
+        return result?["recordsCount"] as? Int ?? 0
+    }
+    
+    func checkTrackerNameExists(_ name: String) -> Bool {
+        let request = NSFetchRequest<NSFetchRequestResult>(entityName: "TrackerCoreData")
+        request.predicate = NSPredicate(format: "name ==[c] %@", name)
+        request.fetchLimit = 1
+        request.resultType = .managedObjectIDResultType
         return (try? context.count(for: request)) ?? 0 > 0
     }
     
-    func clearAllCoreData() {
-        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
-        
-        let entityNames = appDelegate.persistentContainer.managedObjectModel.entities.compactMap { $0.name }
-        
-        entityNames.forEach { entityName in
-            let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
-            let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
-            
-            do {
-                try context.execute(deleteRequest)
-                try context.save()
-            } catch {
-                print("Error deleting \(entityName): \(error)")
-            }
-        }
-        context.refreshAllObjects()
+    func isTrackerCompletedToday(_ trackerId: UUID, date: Date) -> Bool {
+        let request: NSFetchRequest<TrackerRecordCoreData> = TrackerRecordCoreData.fetchRequest()
+        request.predicate = NSPredicate(format: "trackerId == %@ AND completionDate == %@", trackerId as CVarArg, date as CVarArg)
+        return (try? context.count(for: request)) ?? 0 > 0
     }
     
     private func fetchTrackerCD(with id: UUID) -> TrackerCoreData? {

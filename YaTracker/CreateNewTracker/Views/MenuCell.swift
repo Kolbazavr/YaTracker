@@ -8,7 +8,7 @@
 import UIKit
 
 protocol MenuCellDelegate: AnyObject {
-    func userIsTypingSomeBullshit(_ text: String, _ limitReached: Bool)
+    func userIsTypingSomeBullshit(_ text: String, _ overLimit: Bool)
 }
 
 final class MenuCell: UITableViewCell {
@@ -109,7 +109,7 @@ final class MenuCell: UITableViewCell {
     }
     
     private func addWeekDay(weekDay: WeekDay, toggle: Bool) {
-        titleLabel.text = weekDay.rawValue
+        titleLabel.text = weekDay.longName
         vStackView.addArrangedSubview(titleLabel)
         toggleSwitch.isOn = toggle
         hStackView.addArrangedSubview(toggleSwitch)

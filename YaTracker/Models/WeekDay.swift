@@ -7,18 +7,29 @@
 
 import Foundation
 
-enum WeekDay: String, CaseIterable, Comparable, Codable {
+enum WeekDay: Int, CaseIterable, Comparable {
     static func < (lhs: WeekDay, rhs: WeekDay) -> Bool {
         return lhs.sortOrder < rhs.sortOrder
     }
     
-    case monday = "Понедельник"
-    case tuesday = "Вторник"
-    case wednesday = "Среда"
-    case thursday = "Четверг"
-    case friday = "Пятница"
-    case saturday = "Суббота"
-    case sunday = "Воскресенье"
+    static func daysString(from weekdays: Set<WeekDay>) -> String {
+        weekdays.count == 7 ? "Каждый день" : weekdays.sorted().map { $0.shortName } .joined(separator: ", ")
+    }
+    
+    var bitValue: Int16 { 1 << self.sortOrder }
+    
+    init(from date: Date) {
+        let weekdayNumber = Calendar.current.component(.weekday, from: date)
+        self.init(rawValue: weekdayNumber)!
+    }
+    
+    case monday = 2
+    case tuesday
+    case wednesday
+    case thursday
+    case friday
+    case saturday
+    case sunday = 1
     
     var shortName: String {
         return switch self {
@@ -32,6 +43,18 @@ enum WeekDay: String, CaseIterable, Comparable, Codable {
         }
     }
     
+    var longName: String {
+        return switch self {
+        case .monday: "Понедельник"
+        case .tuesday: "Вторник"
+        case .wednesday: "Среда"
+        case .thursday: "Четверг"
+        case .friday: "Пятница"
+        case .saturday: "Суббота"
+        case .sunday:  "Воскресенье"
+        }
+    }
+    
     private var sortOrder: Int {
         return switch self {
         case .monday: 0
@@ -42,29 +65,5 @@ enum WeekDay: String, CaseIterable, Comparable, Codable {
         case .saturday: 5
         case .sunday:  6
         }
-    }
-}
-
-extension WeekDay {
-    init(from date: Date) {
-        let weekdayNumber = Calendar.current.component(.weekday, from: date)
-        switch weekdayNumber {
-        case 1: self = .sunday
-        case 2: self = .monday
-        case 3: self = .tuesday
-        case 4: self = .wednesday
-        case 5: self = .thursday
-        case 6: self = .friday
-        case 7: self = .saturday
-        default:
-            assertionFailure("WTF with day number: \(weekdayNumber). It will be MoooOOOOoonDDaaaaaY!")
-            self = .monday
-        }
-    }
-}
-
-extension WeekDay {
-    static func daysString(from weekdays: Set<WeekDay>) -> String {
-        weekdays.count == 7 ? "Каждый день" : weekdays.sorted().map { $0.shortName } .joined(separator: ", ")
     }
 }

@@ -14,7 +14,7 @@ extension TrackerCoreData {
             name: name ?? "",
             colorHex: colorHex ?? "",
             emoji: emoji ?? "",
-            schedule: (try? JSONDecoder().decode([WeekDay].self, from: schedule ?? Data())) ?? [],
+            schedule: schedule.weekDays.sorted(),
             isPinned: isPinned
         )
     }

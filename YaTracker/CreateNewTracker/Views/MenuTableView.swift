@@ -12,6 +12,7 @@ final class MenuTableView: UITableView {
     weak var menuSelectionDelegate: MenuTableViewDelegate?
     weak var menuTextFieldDelegate: MenuTextFieldDelegate?
     
+    private var nameCheckingWorkItem: DispatchWorkItem?
     private var allMenuItems: [[MenuItem]] = []
     private var limitWarningShown: Bool = false
     private var texFieldsLimit: Int = 0
@@ -70,15 +71,24 @@ final class MenuTableView: UITableView {
 }
 
 extension MenuTableView: MenuCellDelegate {
-    func userIsTypingSomeBullshit(_ text: String, _ limitReached: Bool) {
-        menuTextFieldDelegate?.checkTrackerName(text)
-        showLimitWarning(limitReached, limitWarningShown)
+    func userIsTypingSomeBullshit(_ text: String, _ overLimit: Bool) {
+        nameCheckingWorkItem?.cancel()
+        let newWorkItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            let isAllowed = menuTextFieldDelegate?.checkTrackerName(overLimit ? "" : text) ?? true
+            guard (overLimit || !isAllowed) != limitWarningShown else { return }
+            let warningText = !isAllowed ? "Уже есть такая" : "Ограничение \(texFieldsLimit) символов"
+            
+            showWarningFooter(with: warningText, show: overLimit || !isAllowed)
+        }
+        nameCheckingWorkItem = newWorkItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: newWorkItem)
     }
     
-    func showLimitWarning(_ limitReached: Bool, _ warningShown: Bool) {
-        guard limitReached != warningShown else { return }
+    func showWarningFooter(with text: String, show: Bool) {
         beginUpdates()
-        self.limitWarningShown = limitReached
+        footerWarningLabel.text = text
+        self.limitWarningShown = show
         endUpdates()
     }
 }

@@ -35,13 +35,18 @@ final class TrackersViewController: UIViewController {
         case byName(String)
     }
     
+    private let trackerDataProvider: DataProvider
     private let headerHeight = CGFloat(30)
     
-    private lazy var trackerDataProvider: DataProvider = {
-        let trackerDataProvider =  DataProvider()
-        trackerDataProvider.delegate = self
-        return trackerDataProvider
-    }()
+    init(dataProvider: DataProvider) {
+        self.trackerDataProvider = dataProvider
+        super.init(nibName: nil, bundle: nil)
+        dataProvider.delegate = self
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     private lazy var dateTextField: DateTextField = {
         let textField = DateTextField(maxLength: 6, onSearchAction: searchDateInCalendar)
@@ -99,14 +104,11 @@ final class TrackersViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-//        trackerDataProvider.clearAllCoreData()
         setupUI()
         configCollectionView()
         configureDataSource()
         
         categories = Set(trackerDataProvider.fetchCategories())
-//        Double check:
-//        applySnapshot(for: trackerDataProvider.fetchCategories())
         showStub(filteredCategories.isEmpty)
         tapDetector.isUserInteractionEnabled = false
     }
@@ -129,7 +131,6 @@ final class TrackersViewController: UIViewController {
             result[category.title] = category.trackers.filter {
                 return switch condition {
                 case .byDay(let weekDay): $0.schedule.contains(weekDay)
-//                case .byName(let title): title.isEmpty ? true : $0.name.lowercased().contains(title.lowercased())
                 case .byName(let title): title.isEmpty ? $0.schedule.contains(WeekDay(from: selectedDate)) : $0.name.lowercased().contains(title.lowercased()) && $0.schedule.contains(WeekDay(from: selectedDate))
                 }
             }
@@ -140,7 +141,7 @@ final class TrackersViewController: UIViewController {
     }
     
     @objc private func addNewTracker() {
-        let createTrackerViewController = CreateTrackerVC()
+        let createTrackerViewController = CreateTrackerVC(dataProvider: trackerDataProvider)
         createTrackerViewController.delegate = self
         
         let navigationController = UINavigationController(rootViewController: createTrackerViewController)
@@ -160,8 +161,6 @@ extension TrackersViewController: CreateTrackerVCDelegate {
     func didCreatedNewTracker(_ tracker: Tracker, in category: String) {
         trackerDataProvider.addTracker(tracker, to: category)
         searchTextField.text = nil
-        tapDetector.isUserInteractionEnabled = false
-        applySnapshot(for: filteredCategories)
     }
 }
 
@@ -218,6 +217,7 @@ extension TrackersViewController: TrackerDataProviderDelegate {
     func didUpdate() {
         categories = Set(trackerDataProvider.fetchCategories())
         applySnapshot(for: filteredCategories)
+        tapDetector.isUserInteractionEnabled = false
     }
 }
 

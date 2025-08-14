@@ -12,7 +12,7 @@ protocol MenuTableViewDelegate: AnyObject {
 }
 
 protocol MenuTextFieldDelegate: AnyObject {
-    func checkTrackerName(_ text: String)
+    func checkTrackerName(_ text: String) -> Bool
 }
 
 protocol CreateTrackerVCDelegate: AnyObject {
@@ -23,6 +23,7 @@ final class CreateTrackerVC: UIViewController {
     
     weak var delegate: CreateTrackerVCDelegate?
     
+    private var checkNameWorkItem: DispatchWorkItem?
     private var trackerName: String?
     private var selectedWeekDays: Set<WeekDay> = []
     private var selectedEmoji: String?
@@ -31,6 +32,7 @@ final class CreateTrackerVC: UIViewController {
     
     private var footerView: UIView?
     
+    private let trackerDataProvider: DataProvider
     private let maxTextLength: Int
     private let headerTitle = UILabel()
     private let tableView: MenuTableView
@@ -50,7 +52,8 @@ final class CreateTrackerVC: UIViewController {
         return button
     }()
     
-    init(textLimit: Int = 38) {
+    init(dataProvider: DataProvider, textLimit: Int = 38) {
+        self.trackerDataProvider = dataProvider
         self.maxTextLength = textLimit
         self.tableView = MenuTableView(texFieldsLimit: self.maxTextLength)
         self.decorCollectionView = DecorCollectionView()
@@ -143,9 +146,12 @@ extension CreateTrackerVC: MenuTableViewDelegate {
 }
 
 extension CreateTrackerVC: MenuTextFieldDelegate {
-    func checkTrackerName(_ text: String) {
-        trackerName = text.trimmingCharacters(in: .whitespacesAndNewlines)
+    func checkTrackerName(_ text: String) -> Bool {
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let nameIsExists = trackerDataProvider.checkTrackerNameExists(trimmedText)
+        trackerName = nameIsExists ? "" : trimmedText
         checkIsAllFieldsFilled()
+        return !nameIsExists
     }
 }
 
