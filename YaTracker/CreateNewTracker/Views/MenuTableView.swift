@@ -26,7 +26,6 @@ final class MenuTableView: UITableView {
         label.textColor = .ypRed
         label.font = .systemFont(ofSize: 17, weight: .regular)
         label.textAlignment = .center
-        label.text = "Ограничение \(texFieldsLimit) символов"
         return label
     }()
     

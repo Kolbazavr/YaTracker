@@ -10,8 +10,6 @@ import CoreData
 
 final class TrackerRecordStore: NSObject {
     
-    var onChange: ((Tracker) -> Void)?
-    
     private let context: NSManagedObjectContext
     
     init(context: NSManagedObjectContext) {
@@ -31,7 +29,6 @@ final class TrackerRecordStore: NSObject {
             newRecord.trackerId = tracker.id
             newRecord.tracker = fetchTrackerCD(with: tracker.id)
         }
-        onChange?(tracker)
         saveContext()
     }
     

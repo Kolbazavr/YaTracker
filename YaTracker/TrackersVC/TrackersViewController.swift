@@ -115,16 +115,6 @@ final class TrackersViewController: UIViewController {
             self?.showStub(categories.isEmpty)
         }
         trackerStore.changeWeekDayFilter(to: WeekDay(from: selectedDate))
-        
-        recordStore.onChange = { [weak self] tracker in
-            self?.updateTrackerRecords(tracker)
-        }
-    }
-    
-    private func updateTrackerRecords(_ tracker: Tracker) {
-        var snapshot = dataSource.snapshot()
-        snapshot.reconfigureItems([tracker])
-        dataSource.apply(snapshot, animatingDifferences: true)
     }
     
     private func showStub(_ show: Bool) {
