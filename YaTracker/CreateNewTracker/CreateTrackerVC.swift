@@ -152,7 +152,7 @@ extension CreateTrackerVC: MenuTextFieldDelegate {
             guard let self else { return }
             
             let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            let nameIsAllowed = (isOverLimit || trimmedName.isEmpty) ? false : !trackerStore.checkTrackerNameExists(trimmedName)
+            let nameIsAllowed = isOverLimit ? false : !trackerStore.checkTrackerNameExists(trimmedName)
             trackerName = nameIsAllowed ? trimmedName : ""
             checkIsAllFieldsFilled()
             
