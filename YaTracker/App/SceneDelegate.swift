@@ -4,7 +4,9 @@ import CoreData
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
-    var dataProvider: DataProvider!
+
+    var trackerStore: TrackerStore!
+    var recordStore: TrackerRecordStore!
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let scene = (scene as? UIWindowScene) else { return }
@@ -14,7 +16,8 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             if let error = error { fatalError("Core Data total failure: \(error)") }
         }
         
-        dataProvider = DataProvider(context: container.viewContext)
+        trackerStore = TrackerStore(context: container.viewContext)
+        recordStore = TrackerRecordStore(context: container.viewContext)
         
         let window = UIWindow(windowScene: scene)
         
@@ -32,7 +35,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     private func createTrackersVC() -> UIViewController {
-        let vc = TrackersViewController(dataProvider: dataProvider)
+        let vc = TrackersViewController(trackerStore: trackerStore, recordStore: recordStore)
         vc.tabBarItem = UITabBarItem(
             title: "Трекеры",
             image: UIImage(resource: .tabBarTrackers),

@@ -12,7 +12,7 @@ protocol MenuTableViewDelegate: AnyObject {
 }
 
 protocol MenuTextFieldDelegate: AnyObject {
-    func checkTrackerName(_ text: String) -> Bool
+    func checkTrackerName(_ name: String, isOverLimit: Bool)
 }
 
 protocol CreateTrackerVCDelegate: AnyObject {
@@ -23,7 +23,7 @@ final class CreateTrackerVC: UIViewController {
     
     weak var delegate: CreateTrackerVCDelegate?
     
-    private var checkNameWorkItem: DispatchWorkItem?
+    private var nameCheckingWorkItem: DispatchWorkItem?
     private var trackerName: String?
     private var selectedWeekDays: Set<WeekDay> = []
     private var selectedEmoji: String?
@@ -32,7 +32,7 @@ final class CreateTrackerVC: UIViewController {
     
     private var footerView: UIView?
     
-    private let trackerDataProvider: DataProvider
+    private let trackerStore: TrackerStore
     private let maxTextLength: Int
     private let headerTitle = UILabel()
     private let tableView: MenuTableView
@@ -52,8 +52,8 @@ final class CreateTrackerVC: UIViewController {
         return button
     }()
     
-    init(dataProvider: DataProvider, textLimit: Int = 38) {
-        self.trackerDataProvider = dataProvider
+    init(trackerStore: TrackerStore, textLimit: Int = 38) {
+        self.trackerStore = trackerStore
         self.maxTextLength = textLimit
         self.tableView = MenuTableView(texFieldsLimit: self.maxTextLength)
         self.decorCollectionView = DecorCollectionView()
@@ -146,12 +146,22 @@ extension CreateTrackerVC: MenuTableViewDelegate {
 }
 
 extension CreateTrackerVC: MenuTextFieldDelegate {
-    func checkTrackerName(_ text: String) -> Bool {
-        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let nameIsExists = trackerDataProvider.checkTrackerNameExists(trimmedText)
-        trackerName = nameIsExists ? "" : trimmedText
-        checkIsAllFieldsFilled()
-        return !nameIsExists
+    func checkTrackerName(_ name: String, isOverLimit: Bool) {
+        nameCheckingWorkItem?.cancel()
+        let newWorkItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            
+            let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            let nameIsAllowed = (isOverLimit || trimmedName.isEmpty) ? false : !trackerStore.checkTrackerNameExists(trimmedName)
+            trackerName = nameIsAllowed ? trimmedName : ""
+            checkIsAllFieldsFilled()
+            
+            guard (isOverLimit || !nameIsAllowed) != tableView.warningShown else { return }
+            let warningText = isOverLimit ? "Ограничение \(maxTextLength) символов" : "Уже есть такая"
+            tableView.showWarningFooter(with: warningText, show: isOverLimit || !nameIsAllowed)
+        }
+        nameCheckingWorkItem = newWorkItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: newWorkItem)
     }
 }
 

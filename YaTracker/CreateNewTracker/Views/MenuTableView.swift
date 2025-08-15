@@ -12,9 +12,9 @@ final class MenuTableView: UITableView {
     weak var menuSelectionDelegate: MenuTableViewDelegate?
     weak var menuTextFieldDelegate: MenuTextFieldDelegate?
     
-    private var nameCheckingWorkItem: DispatchWorkItem?
+    var warningShown: Bool = false
+    
     private var allMenuItems: [[MenuItem]] = []
-    private var limitWarningShown: Bool = false
     private var texFieldsLimit: Int = 0
     
     private let cellHeight = CGFloat(75)
@@ -72,23 +72,13 @@ final class MenuTableView: UITableView {
 
 extension MenuTableView: MenuCellDelegate {
     func userIsTypingSomeBullshit(_ text: String, _ overLimit: Bool) {
-        nameCheckingWorkItem?.cancel()
-        let newWorkItem = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            let isAllowed = menuTextFieldDelegate?.checkTrackerName(overLimit ? "" : text) ?? true
-            guard (overLimit || !isAllowed) != limitWarningShown else { return }
-            let warningText = !isAllowed ? "Уже есть такая" : "Ограничение \(texFieldsLimit) символов"
-            
-            showWarningFooter(with: warningText, show: overLimit || !isAllowed)
-        }
-        nameCheckingWorkItem = newWorkItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: newWorkItem)
+        menuTextFieldDelegate?.checkTrackerName(text, isOverLimit: overLimit)
     }
     
     func showWarningFooter(with text: String, show: Bool) {
         beginUpdates()
         footerWarningLabel.text = text
-        self.limitWarningShown = show
+        self.warningShown = show
         endUpdates()
     }
 }
@@ -147,6 +137,6 @@ extension MenuTableView: UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         guard case .textField = allMenuItems[section].first else { return 0 }
-        return limitWarningShown ? footerHeight : 0
+        return warningShown ? footerHeight : 0
     }
 }

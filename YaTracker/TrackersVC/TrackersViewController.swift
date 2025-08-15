@@ -24,24 +24,22 @@ final class TrackersViewController: UIViewController {
     
     private var collectionView: UICollectionView!
     private var dataSource: TrackerDataSource!
-   
     private var selectedDate: Date = Date().onlyDate
-    private var completedTrackers: Set<TrackerRecord> = []
-    private var categories: Set<TrackerCategory> = [] { didSet { search(.byDay(WeekDay(from: selectedDate))) } }
-    private var filteredCategories: [TrackerCategory] = [] { didSet { showStub(filteredCategories.isEmpty) } }
+
+    private let trackerStore: TrackerStore
+    private let recordStore: TrackerRecordStore
     
     private enum SearchCondition {
         case byDay(WeekDay)
         case byName(String)
     }
     
-    private let trackerDataProvider: DataProvider
     private let headerHeight = CGFloat(30)
     
-    init(dataProvider: DataProvider) {
-        self.trackerDataProvider = dataProvider
+    init(trackerStore: TrackerStore, recordStore: TrackerRecordStore) {
+        self.trackerStore = trackerStore
+        self.recordStore = recordStore
         super.init(nibName: nil, bundle: nil)
-        dataProvider.delegate = self
     }
     
     required init?(coder: NSCoder) {
@@ -107,10 +105,26 @@ final class TrackersViewController: UIViewController {
         setupUI()
         configCollectionView()
         configureDataSource()
-        
-        categories = Set(trackerDataProvider.fetchCategories())
-        showStub(filteredCategories.isEmpty)
+        setupStores()
         tapDetector.isUserInteractionEnabled = false
+    }
+    
+    private func setupStores() {
+        trackerStore.onChange = { [weak self] categories in
+            self?.applySnapshot(for: categories)
+            self?.showStub(categories.isEmpty)
+        }
+        trackerStore.changeWeekDayFilter(to: WeekDay(from: selectedDate))
+        
+        recordStore.onChange = { [weak self] tracker in
+            self?.updateTrackerRecords(tracker)
+        }
+    }
+    
+    private func updateTrackerRecords(_ tracker: Tracker) {
+        var snapshot = dataSource.snapshot()
+        snapshot.reconfigureItems([tracker])
+        dataSource.apply(snapshot, animatingDifferences: true)
     }
     
     private func showStub(_ show: Bool) {
@@ -127,21 +141,16 @@ final class TrackersViewController: UIViewController {
     
     private func search(_ condition: SearchCondition ) {
         tapDetector.isUserInteractionEnabled = true
-        let trackersOnThisDay: [String: [Tracker]] = categories.reduce(into: [:]) { result, category in
-            result[category.title] = category.trackers.filter {
-                return switch condition {
-                case .byDay(let weekDay): $0.schedule.contains(weekDay)
-                case .byName(let title): title.isEmpty ? $0.schedule.contains(WeekDay(from: selectedDate)) : $0.name.lowercased().contains(title.lowercased()) && $0.schedule.contains(WeekDay(from: selectedDate))
-                }
-            }
-            result = result.filter { !$1.isEmpty }
+        switch condition {
+        case .byDay(let weekDay):
+            trackerStore.changeWeekDayFilter(to: weekDay)
+        case .byName(let name):
+            trackerStore.changeNameFilter(to: name)
         }
-        filteredCategories = trackersOnThisDay.map { TrackerCategory(title: $0.key, trackers: $0.value) }
-        applySnapshot(for: filteredCategories)
     }
     
     @objc private func addNewTracker() {
-        let createTrackerViewController = CreateTrackerVC(dataProvider: trackerDataProvider)
+        let createTrackerViewController = CreateTrackerVC(trackerStore: trackerStore)
         createTrackerViewController.delegate = self
         
         let navigationController = UINavigationController(rootViewController: createTrackerViewController)
@@ -159,7 +168,7 @@ final class TrackersViewController: UIViewController {
 
 extension TrackersViewController: CreateTrackerVCDelegate {
     func didCreatedNewTracker(_ tracker: Tracker, in category: String) {
-        trackerDataProvider.addTracker(tracker, to: category)
+        trackerStore.addTracker(tracker, to: category)
         searchTextField.text = nil
     }
 }
@@ -206,27 +215,15 @@ extension TrackersViewController: CalendarViewDelegate {
 
 extension TrackersViewController: TrackerCellDelegate {
     func didTapTrackerCell(with tracker: Tracker) {
-        trackerDataProvider.toggleRecord(for: tracker.id, on: selectedDate)
-        var snapshot = dataSource.snapshot()
-        snapshot.reconfigureItems([tracker])
-        dataSource.apply(snapshot, animatingDifferences: true)
+        recordStore.toggleRecord(for: tracker, on: selectedDate)
     }
 }
-
-extension TrackersViewController: TrackerDataProviderDelegate {
-    func didUpdate() {
-        categories = Set(trackerDataProvider.fetchCategories())
-        applySnapshot(for: filteredCategories)
-        tapDetector.isUserInteractionEnabled = false
-    }
-}
-
 
 extension TrackersViewController {
     private func configureDataSource() {
         let cellRegistration = UICollectionView.CellRegistration<TrackerCellCard, Tracker> { cell, indexPath, tracker in
-            let recordsCount = self.trackerDataProvider.getCompletedTrackersCount(for: tracker.id)
-            let isCompletedToday = self.trackerDataProvider.isTrackerCompletedToday(tracker.id, date: self.selectedDate)
+            let recordsCount = self.trackerStore.getCompletedTrackersCount(for: tracker.id)
+            let isCompletedToday = self.trackerStore.isTrackerCompletedToday(tracker.id, date: self.selectedDate)
             
             let enableButton = self.selectedDate <= Date()
             cell.configure(with: tracker, isCompletedToday: isCompletedToday, daysCompleted: recordsCount, enableButton: enableButton)
