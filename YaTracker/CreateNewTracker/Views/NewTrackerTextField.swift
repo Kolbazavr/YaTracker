@@ -11,7 +11,7 @@ final class NewTrackerTextField: UITextField {
     
     var maxLength: Int
     
-    private var limitReached: Bool { text?.count ?? 0 >= maxLength }
+    private var overLimit: Bool { text?.count ?? 0 > maxLength }
     private let onTypingAction: ((String, Bool) -> Void)?
     
     init(placeholder: String? = nil, maxLength: Int = 38, onTypingAction: @escaping ((String, Bool) -> Void)) {
@@ -44,7 +44,7 @@ final class NewTrackerTextField: UITextField {
     }
     
     @objc private func textDidChange() {
-        onTypingAction?(self.text ?? "", limitReached)
+        onTypingAction?(self.text ?? "", overLimit)
     }
 }
 
@@ -56,6 +56,6 @@ extension NewTrackerTextField: UITextFieldDelegate {
         else { return false }
         
         let newText = currentText.replacingCharacters(in: textRange, with: string)
-        return newText.count <= maxLength
+        return newText.count <= maxLength + 1
     }
 }

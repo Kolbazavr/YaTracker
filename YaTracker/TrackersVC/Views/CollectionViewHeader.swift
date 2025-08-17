@@ -27,8 +27,8 @@ final class CollectionViewHeader: UICollectionReusableView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(with category: TrackerCategory) {
-        label.text = category.title
+    func configure(with categoryName: String) {
+        label.text = categoryName
     }
     
     private func setupViews() {
@@ -41,6 +41,4 @@ final class CollectionViewHeader: UICollectionReusableView {
             label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
         ])
     }
-    
-    
 }

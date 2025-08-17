@@ -1,11 +1,24 @@
 import UIKit
+import CoreData
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var window: UIWindow?
 
+    var trackerStore: TrackerStore!
+    var recordStore: TrackerRecordStore!
+
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let scene = (scene as? UIWindowScene) else { return }
+        
+        let container = NSPersistentContainer(name: "ModelSupaStar")
+        container.loadPersistentStores { _, error in
+            if let error { assertionFailure("CoreData total assertion failure: \(error)") }
+        }
+        
+        trackerStore = TrackerStore(context: container.viewContext)
+        recordStore = TrackerRecordStore(context: container.viewContext)
+        
         let window = UIWindow(windowScene: scene)
         
         let appearance = UITabBarAppearance()
@@ -22,7 +35,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     private func createTrackersVC() -> UIViewController {
-        let vc = TrackersViewController()
+        let vc = TrackersViewController(trackerStore: trackerStore, recordStore: recordStore)
         vc.tabBarItem = UITabBarItem(
             title: "Трекеры",
             image: UIImage(resource: .tabBarTrackers),

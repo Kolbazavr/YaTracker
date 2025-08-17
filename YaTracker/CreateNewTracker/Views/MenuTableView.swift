@@ -12,19 +12,20 @@ final class MenuTableView: UITableView {
     weak var menuSelectionDelegate: MenuTableViewDelegate?
     weak var menuTextFieldDelegate: MenuTextFieldDelegate?
     
-    var allMenuItems: [MenuItem] = []
+    var warningShown: Bool = false
     
-    private var limitWarningShown: Bool = false
-    private var texFieldsLimit: Int
+    private var allMenuItems: [[MenuItem]] = []
+    private var texFieldsLimit: Int = 0
+    
     private let cellHeight = CGFloat(75)
     private let footerHeight = CGFloat(38)
+    private let decorCollectionHeight = CGFloat(204 + 34 + 204 + 34)
     
     private lazy var footerWarningLabel: UILabel = {
         let label = UILabel()
         label.textColor = .ypRed
         label.font = .systemFont(ofSize: 17, weight: .regular)
         label.textAlignment = .center
-        label.text = "Ограничение \(texFieldsLimit) символов"
         return label
     }()
     
@@ -39,7 +40,7 @@ final class MenuTableView: UITableView {
     }
     
     func addMenuItems(_ menuItems: [MenuItem]) {
-        self.allMenuItems = menuItems
+        self.allMenuItems = separateToSections(menuItems)
         reloadData()
     }
     
@@ -50,69 +51,91 @@ final class MenuTableView: UITableView {
     
     private func setupTableView() {
         backgroundColor = .ypWhite
+        tableHeaderView = UIView(frame: CGRect(x: 0, y: 0, width: bounds.width, height: CGFloat.leastNonzeroMagnitude))
+
         separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        
         dataSource = self
         delegate = self
+        
         register(MenuCell.self, forCellReuseIdentifier: MenuCell.reuseIdentifier)
+        register(MenuDecorCell.self, forCellReuseIdentifier: MenuDecorCell.reuseIdentifier)
     }
     
-    private func menuItems(for section: Int) -> [MenuItem] {
-        allMenuItems.filter { $0.typeName == allMenuItems[section].typeName }
+    private func separateToSections(_ menuItems: [MenuItem]) -> [[MenuItem]] {
+        menuItems.reduce(into: []) { result, item in
+            result.last?.last?.typeName == item.typeName ? result[result.count - 1].append(item) :  result.append([item])
+        }
     }
 }
 
 extension MenuTableView: MenuCellDelegate {
-    func userIsTypingSomeBullshit(_ text: String, _ limitReached: Bool) {
-        menuTextFieldDelegate?.checkTrackerName(text)
-        showLimitWarning(limitReached, limitWarningShown)
+    func userIsTypingSomeBullshit(_ text: String, _ overLimit: Bool) {
+        menuTextFieldDelegate?.checkTrackerName(text, isOverLimit: overLimit)
     }
     
-    func showLimitWarning(_ limitReached: Bool, _ warningShown: Bool) {
-        guard limitReached != warningShown else { return }
+    func showWarningFooter(with text: String, show: Bool) {
         beginUpdates()
-        self.limitWarningShown = limitReached
+        footerWarningLabel.text = text
+        self.warningShown = show
         endUpdates()
     }
 }
 
 extension MenuTableView: UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        menuItems(for: section).count
+        allMenuItems[section].count
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {
-        Set(allMenuItems.map { $0.typeName }).count
+        allMenuItems.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: MenuCell.reuseIdentifier, for: indexPath) as? MenuCell else {
-            return UITableViewCell()
+        let item = allMenuItems[indexPath.section][indexPath.row]
+        switch item {
+        case .decorCollection(let collectionDelegate):
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: MenuDecorCell.reuseIdentifier, for: indexPath) as? MenuDecorCell else {
+                return UITableViewCell()
+            }
+            cell.configure(collectionDelegate: collectionDelegate)
+            return cell
+        default:
+            guard let cell = tableView.dequeueReusableCell(withIdentifier: MenuCell.reuseIdentifier, for: indexPath) as? MenuCell else {
+                return UITableViewCell()
+            }
+            cell.configureCell(with: item, delegate: self)
+            return cell
         }
-        let item = menuItems(for: indexPath.section)[indexPath.row]
-        cell.configureCell(with: item, delegate: self)
-        return cell
     }
 }
 
 extension MenuTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        cellHeight
+        let item = allMenuItems[indexPath.section][indexPath.row]
+        switch item {
+        case .decorCollection:
+            return decorCollectionHeight
+        default:
+            return cellHeight
+        }
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let menuItem = menuItems(for: indexPath.section)[indexPath.row]
+        let menuItem = allMenuItems[indexPath.section][indexPath.row]
         let selectedCell = tableView.cellForRow(at: indexPath) as? MenuCell
         
         menuSelectionDelegate?.didSelectMenuItem(menuItem, at: selectedCell)
     }
     
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        guard case .textField = allMenuItems[section] else { return nil }
+        guard case .textField = allMenuItems[section].first else { return nil }
         return footerWarningLabel
     }
     
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        limitWarningShown ? footerHeight : 0
+        guard case .textField = allMenuItems[section].first else { return 0 }
+        return warningShown ? footerHeight : 0
     }
 }

@@ -24,11 +24,10 @@ final class TrackersViewController: UIViewController {
     
     private var collectionView: UICollectionView!
     private var dataSource: TrackerDataSource!
-   
-    private var selectedDate: Date = Date()
-    private var completedTrackers: Set<TrackerRecord> = []
-    private var categories: Set<TrackerCategory> = [] { didSet { search(.byDay(WeekDay(from: selectedDate))) } }
-    private var filteredCategories: [TrackerCategory] = [] { didSet { showStub(filteredCategories.isEmpty) } }
+    private var selectedDate: Date = Date().onlyDate
+
+    private let trackerStore: TrackerStore
+    private let recordStore: TrackerRecordStore
     
     private enum SearchCondition {
         case byDay(WeekDay)
@@ -36,6 +35,16 @@ final class TrackersViewController: UIViewController {
     }
     
     private let headerHeight = CGFloat(30)
+    
+    init(trackerStore: TrackerStore, recordStore: TrackerRecordStore) {
+        self.trackerStore = trackerStore
+        self.recordStore = recordStore
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     private lazy var dateTextField: DateTextField = {
         let textField = DateTextField(maxLength: 6, onSearchAction: searchDateInCalendar)
@@ -96,7 +105,16 @@ final class TrackersViewController: UIViewController {
         setupUI()
         configCollectionView()
         configureDataSource()
-        showStub(filteredCategories.isEmpty)
+        setupStores()
+        tapDetector.isUserInteractionEnabled = false
+    }
+    
+    private func setupStores() {
+        trackerStore.onChange = { [weak self] categories in
+            self?.applySnapshot(for: categories)
+            self?.showStub(categories.isEmpty)
+        }
+        trackerStore.changeWeekDayFilter(to: WeekDay(from: selectedDate))
     }
     
     private func showStub(_ show: Bool) {
@@ -108,30 +126,25 @@ final class TrackersViewController: UIViewController {
     
     private func searchDateInCalendar(_ date: Date) {
         calendarView.selectDate(date)
-        selectedDate = date
+        selectedDate = date.onlyDate
     }
     
     private func search(_ condition: SearchCondition ) {
         tapDetector.isUserInteractionEnabled = true
-        let trackersOnThisDay: [String: [Tracker]] = categories.reduce(into: [:]) { result, category in
-            result[category.title] = category.trackers.filter {
-                return switch condition {
-                case .byDay(let weekDay): $0.schedule.contains(weekDay)
-                case .byName(let title): title.isEmpty ? true : $0.name.lowercased().contains(title.lowercased())
-                }
-            }
-            result = result.filter { !$1.isEmpty }
+        switch condition {
+        case .byDay(let weekDay):
+            trackerStore.changeWeekDayFilter(to: weekDay)
+        case .byName(let name):
+            trackerStore.changeNameFilter(to: name)
         }
-        filteredCategories = trackersOnThisDay.map { TrackerCategory(title: $0.key, trackers: $0.value) }
-        applySnapshot(for: filteredCategories)
     }
     
     @objc private func addNewTracker() {
-        let createTrackerViewController = CreateTrackerVC()
+        let createTrackerViewController = CreateTrackerVC(trackerStore: trackerStore)
         createTrackerViewController.delegate = self
         
         let navigationController = UINavigationController(rootViewController: createTrackerViewController)
-        navigationController.modalPresentationStyle = .pageSheet
+        navigationController.modalPresentationStyle = .automatic
         navigationController.navigationBar.isHidden = true
         present(navigationController, animated: true)
     }
@@ -145,16 +158,8 @@ final class TrackersViewController: UIViewController {
 
 extension TrackersViewController: CreateTrackerVCDelegate {
     func didCreatedNewTracker(_ tracker: Tracker, in category: String) {
-        var categoryToInsert = TrackerCategory(title: category, trackers: [tracker])
-        if let existing = categories.remove(categoryToInsert) {
-            let trackers = existing.trackers + [tracker]
-            categoryToInsert = TrackerCategory(title: category, trackers: trackers)
-        }
-        categories.insert(categoryToInsert)
+        trackerStore.addTracker(tracker, to: category)
         searchTextField.text = nil
-        search(.byDay(WeekDay(from: selectedDate)))
-        tapDetector.isUserInteractionEnabled = false
-        applySnapshot(for: filteredCategories)
     }
 }
 
@@ -191,7 +196,7 @@ extension TrackersViewController: DateTextFieldDelegate {
 
 extension TrackersViewController: CalendarViewDelegate {
     func didSelectDate(_ date: Date) {
-        selectedDate = date
+        selectedDate = date.onlyDate
         dateTextField.setDate(date)
         search(.byDay(WeekDay(from: date)))
         hideCalendar()
@@ -200,30 +205,24 @@ extension TrackersViewController: CalendarViewDelegate {
 
 extension TrackersViewController: TrackerCellDelegate {
     func didTapTrackerCell(with tracker: Tracker) {
-        let record = TrackerRecord(trackerId: tracker.id, completionDate: selectedDate.onlyDate)
-        let _ = completedTrackers.remove(record) ?? completedTrackers.insert(record).memberAfterInsert
-        var snapshot = dataSource.snapshot()
-        snapshot.reconfigureItems([tracker])
-        dataSource.apply(snapshot, animatingDifferences: false)
+        recordStore.toggleRecord(for: tracker, on: selectedDate)
     }
 }
-
 
 extension TrackersViewController {
     private func configureDataSource() {
         let cellRegistration = UICollectionView.CellRegistration<TrackerCellCard, Tracker> { cell, indexPath, tracker in
+            let recordsCount = self.trackerStore.getCompletedTrackersCount(for: tracker.id)
+            let isCompletedToday = self.trackerStore.isTrackerCompletedToday(tracker.id, date: self.selectedDate)
             
-            let isCompletedToday = self.completedTrackers.contains(where: { $0.trackerId == tracker.id && $0.completionDate == self.selectedDate.onlyDate })
-            
-            let completedCount = self.completedTrackers.filter({ $0.trackerId == tracker.id }).count
-            let enableButton = Calendar.current.isDateInToday(self.selectedDate) || self.selectedDate < Date()
-            cell.configure(with: tracker, isCompletedToday: isCompletedToday, daysCompleted: completedCount, enableButton: enableButton)
+            let enableButton = self.selectedDate <= Date()
+            cell.configure(with: tracker, isCompletedToday: isCompletedToday, daysCompleted: recordsCount, enableButton: enableButton)
             cell.delegate = self
         }
         
         let headerRegistration = UICollectionView.SupplementaryRegistration<CollectionViewHeader>(elementKind: UICollectionView.elementKindSectionHeader) { headerView, _, indexPath in
             let category = self.dataSource.snapshot().sectionIdentifiers[indexPath.section]
-            headerView.configure(with: category)
+            headerView.configure(with: category.title)
         }
         
         dataSource = TrackerDataSource(collectionView: collectionView, cellProvider: { collectionView, indexPath, tracker in
@@ -231,10 +230,7 @@ extension TrackersViewController {
         })
         
         dataSource.supplementaryViewProvider = { collectionView, kind, indexPath in
-            if kind == UICollectionView.elementKindSectionHeader {
-                return collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath)
-            }
-            return nil
+            kind == UICollectionView.elementKindSectionHeader ? collectionView.dequeueConfiguredReusableSupplementary(using: headerRegistration, for: indexPath) : nil
         }
     }
     
@@ -242,7 +238,8 @@ extension TrackersViewController {
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .fractionalHeight(1.0))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(148))
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(90 + 58))
+        
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, repeatingSubitem: item, count: 2)
         group.interItemSpacing = .fixed(9)
         
@@ -250,7 +247,7 @@ extension TrackersViewController {
         section.interGroupSpacing = 0
         section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 16, bottom: 16, trailing: 16)
         
-        let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(30))
+        let headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(headerHeight))
         let header = NSCollectionLayoutBoundarySupplementaryItem(
             layoutSize: headerSize,
             elementKind: UICollectionView.elementKindSectionHeader,
@@ -264,9 +261,7 @@ extension TrackersViewController {
     private func applySnapshot(for categories: [TrackerCategory], animated: Bool = true) {
         var snapshot = TrackerSnapshot()
         snapshot.appendSections(categories)
-        for category in categories {
-            snapshot.appendItems(category.trackers, toSection: category)
-        }
+        categories.forEach { snapshot.appendItems($0.trackers, toSection: $0) }
         snapshot.reconfigureItems(snapshot.itemIdentifiers)
         dataSource.apply(snapshot, animatingDifferences: animated)
     }
@@ -309,8 +304,6 @@ extension TrackersViewController {
         let tapRecognizer: UITapGestureRecognizer = .init(target: self, action: #selector(dismissEditingThingys))
         tapRecognizer.cancelsTouchesInView = false
         tapDetector.addGestureRecognizer(tapRecognizer)
-        
-        tapDetector.translatesAutoresizingMaskIntoConstraints = false
         
         [searchTextField, trackersLabel, tapDetector, topStackView, calendarView].forEach {
             view.addSubview($0)

@@ -21,3 +21,7 @@ extension Int {
         }
     }
 }
+
+extension Int16 {
+    var weekDays: Set<WeekDay> { Set(WeekDay.allCases.filter { self & $0.bitValue != 0 }) }
+}
