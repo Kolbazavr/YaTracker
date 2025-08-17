@@ -57,6 +57,7 @@ final class TrackerStore: NSObject {
             
             let categoryRequest: NSFetchRequest<TrackerCategoryCoreData> = TrackerCategoryCoreData.fetchRequest()
             categoryRequest.predicate = NSPredicate(format: "title == %@", categoryWithTitle)
+            categoryRequest.fetchLimit = 1
             
             let categoryToInsert = try? self.context.fetch(categoryRequest).first ?? {
                 let newCategory = TrackerCategoryCoreData(context: self.context)
@@ -95,6 +96,7 @@ final class TrackerStore: NSObject {
     func isTrackerCompletedToday(_ trackerId: UUID, date: Date) -> Bool {
         let request: NSFetchRequest<TrackerRecordCoreData> = TrackerRecordCoreData.fetchRequest()
         request.predicate = NSPredicate(format: "trackerId == %@ AND completionDate == %@", trackerId as CVarArg, date as CVarArg)
+        request.fetchLimit = 1
         return (try? context.count(for: request)) ?? 0 > 0
     }
     

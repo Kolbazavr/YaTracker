@@ -38,6 +38,18 @@ final class CreateTrackerVC: UIViewController {
     private let tableView: MenuTableView
     private let decorCollectionView: DecorCollectionView
     
+    private enum WarningType {
+        case nameLength(Int)
+        case nameExists
+        
+        var message: String {
+            return switch self {
+            case .nameLength(let limit): "Ограничение \(limit) символов"
+            case .nameExists: "Уже есть такая"
+            }
+        }
+    }
+    
     private lazy var doneButton: UIButton = {
         let button = DoneButton(type: .system)
         button.setTitle("Создать", for: .normal)
@@ -157,7 +169,7 @@ extension CreateTrackerVC: MenuTextFieldDelegate {
             checkIsAllFieldsFilled()
             
             guard (isOverLimit || !nameIsAllowed) != tableView.warningShown else { return }
-            let warningText = isOverLimit ? "Ограничение \(maxTextLength) символов" : "Уже есть такая"
+            let warningText = isOverLimit ? WarningType.nameLength(maxTextLength).message : WarningType.nameExists.message
             tableView.showWarningFooter(with: warningText, show: isOverLimit || !nameIsAllowed)
         }
         nameCheckingWorkItem = newWorkItem

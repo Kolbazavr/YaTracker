@@ -13,7 +13,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         let container = NSPersistentContainer(name: "ModelSupaStar")
         container.loadPersistentStores { _, error in
-            if let error = error { fatalError("Core Data total failure: \(error)") }
+            if let error { assertionFailure("CoreData total assertion failure: \(error)") }
         }
         
         trackerStore = TrackerStore(context: container.viewContext)

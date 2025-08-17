@@ -20,6 +20,7 @@ final class TrackerRecordStore: NSObject {
         
         let request: NSFetchRequest<TrackerRecordCoreData> = TrackerRecordCoreData.fetchRequest()
         request.predicate = NSPredicate(format: "(trackerId == %@) AND (completionDate == %@)", tracker.id as CVarArg, date as CVarArg)
+        request.fetchLimit = 1
         
         if let existingRecord = try? context.fetch(request).first {
             context.delete(existingRecord)
@@ -35,6 +36,7 @@ final class TrackerRecordStore: NSObject {
     private func fetchTrackerCD(with id: UUID) -> TrackerCoreData? {
         let request: NSFetchRequest<TrackerCoreData> = TrackerCoreData.fetchRequest()
         request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+        request.fetchLimit = 1
         return try? context.fetch(request).first
     }
     

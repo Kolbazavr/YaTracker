@@ -8,10 +8,14 @@
 import UIKit
 
 final class ButtonsView: UIView {
+    let horizontalSpacing: CGFloat = 8
+    let padding: CGFloat = 16
+    let buttonHeight: CGFloat = 60
+    
     private lazy var hStack: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .horizontal
-        stackView.spacing = 8
+        stackView.spacing = horizontalSpacing
         stackView.distribution = .fillEqually
         stackView.translatesAutoresizingMaskIntoConstraints = false
         return stackView
@@ -24,11 +28,11 @@ final class ButtonsView: UIView {
         addSubview(hStack)
                 
         NSLayoutConstraint.activate([
-            hStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
-            hStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            hStack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: 0),
+            hStack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: padding),
+            hStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -padding),
+            hStack.bottomAnchor.constraint(equalTo: bottomAnchor),
             
-            hStack.heightAnchor.constraint(greaterThanOrEqualToConstant: 60)
+            hStack.heightAnchor.constraint(greaterThanOrEqualToConstant: buttonHeight)
         ])
     }
     
