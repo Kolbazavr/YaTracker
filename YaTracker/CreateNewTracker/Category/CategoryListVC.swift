@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Combine
 
 protocol CategoryListVCDelegate: AnyObject {
     func didSelectCategory(categoryTitle: String)
@@ -15,16 +16,36 @@ final class CategoryListVC: UIViewController {
     
     weak var delegate: CategoryListVCDelegate?
     
+    private var cancellables = Set<AnyCancellable>()
+    
+    private let viewModel: CategoryListViewModel
     private let headerTitle = UILabel()
     private let tableView = MenuTableView()
-    private lazy var doneButton: UIButton = {
+    
+    private lazy var addCategoryButton: UIButton = {
         let button = DoneButton(type: .system)
-        button.setTitle("Готово", for: .normal)
-        button.addTarget(self, action: #selector(didTapDoneButton), for: .touchUpInside)
+        button.setTitle("Добавить категорию", for: .normal)
+        button.addTarget(self, action: #selector(didTapAddCategoryButton), for: .touchUpInside)
         return button
     }()
     
-    init(delegate: CategoryListVCDelegate? = nil) {
+    private lazy var emptyStateLabel: UILabel = {
+        let label = UILabel()
+        label.numberOfLines = 2
+        label.font = .systemFont(ofSize: 12, weight: .medium)
+        label.textColor = .ypBlackDay
+        label.textAlignment = .center
+        label.text = "Привычки и события можно\nобъединить по смыслу"
+        return label
+    }()
+    
+    private lazy var emptyStateImageView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(resource: .emptyState))
+        return imageView
+    }()
+    
+    init(selectedCategory: String? = nil, categoryStore: TrackerCategoryStore, delegate: CategoryListVCDelegate? = nil) {
+        self.viewModel = CategoryListViewModel(categoryStore: categoryStore, preselectedCategoryTitle: selectedCategory)
         self.delegate = delegate
         super.init(nibName: nil, bundle: nil)
     }
@@ -35,20 +56,96 @@ final class CategoryListVC: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupTableViewItems()
+        bindViewModel()
+        setupTableView()
         setupUI()
     }
-    
-    private func setupTableViewItems() {
-        let menuItem: MenuItem = .textField(placeholder: "Введите название категории", limit: 38)
         
-        tableView.addMenuItems([menuItem])
-        tableView.menuSelectionDelegate = self
+    private func bindViewModel() {
+        viewModel.$categories
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] categories in
+                self?.showEmptyStateStub(categories.isEmpty)
+                self?.updateTableViewItems()
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$selectedCategoryTitle
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] title in
+                self?.categoryTitleWasSelected(self?.viewModel.selectedCategoryTitle)
+            }
+            .store(in: &cancellables)
+        
+        viewModel.$categoryToRename
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.navigateToAddNewCategory()
+            }
+            .store(in: &cancellables)
     }
     
-    @objc private func didTapDoneButton() {
-        delegate?.didSelectCategory(categoryTitle: "DummyCategory")
-        navigationController?.popViewController(animated: true)
+    private func setupTableView() {
+        tableView.menuSelectionDelegate = self
+        tableView.addMenuProvider { [weak self] IndexPath in
+            guard let self else { return nil }
+            let categoryTitle = self.viewModel.categories[IndexPath.row].title
+            
+            let edit = UIAction(title: "Редактировать") { [weak self] _ in
+                self?.didChooseToEditCategory(categoryToEdit: categoryTitle)
+            }
+            let delete = UIAction(title: "Удалить", attributes: .destructive) { [weak self] _ in
+                self?.didChooseToDeleteCategory(categoryToDelete: categoryTitle)
+            }
+            return UIMenu(title: "", children: [edit, delete])
+        }
+    }
+    
+    private func didChooseToEditCategory(categoryToEdit: String?) {
+        viewModel.categoryToRename = categoryToEdit
+    }
+    
+    private func didChooseToDeleteCategory(categoryToDelete: String) {
+        let alert = UIAlertController(title: "Эта категория точно не нужна?", message: nil, preferredStyle: .actionSheet)
+        let deleteAction = UIAlertAction(title: "Удалить", style: .destructive) { [weak self] _ in
+            self?.viewModel.delete(categoryWithTitle: categoryToDelete)
+        }
+        let cancelAction = UIAlertAction(title: "Отмена", style: .cancel)
+        alert.addAction(deleteAction)
+        alert.addAction(cancelAction)
+        present(alert, animated: true)
+    }
+    
+    private func updateTableViewItems() {
+        let menuItems: [MenuItem] = viewModel.categories.map { .categorySelector(categoryTitle: $0.title, isSelected: $0.title == viewModel.selectedCategoryTitle) }
+        tableView.addMenuItems(menuItems)
+    }
+    
+    private func categoryTitleWasSelected(_ title: String?) {
+        guard let title else { return }
+        tableView.isUserInteractionEnabled = false
+        updateTableViewItems()
+        delegate?.didSelectCategory(categoryTitle: title)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            self.navigationController?.popViewController(animated: true)
+        }
+    }
+    
+    private func navigateToAddNewCategory() {
+        let vc = AddNewCategoryVC(viewModel: viewModel)
+        navigationController?.pushViewController(vc, animated: true)
+    }
+    
+    private func showEmptyStateStub(_ show: Bool) {
+        emptyStateLabel.isHidden = !show
+        emptyStateImageView.isHidden = !show
+    }
+    
+    @objc private func didTapAddCategoryButton() {
+        didChooseToEditCategory(categoryToEdit: nil)
     }
     
     @objc private func hideKeyboard() {
@@ -62,7 +159,7 @@ final class CategoryListVC: UIViewController {
         tapRecognizer.cancelsTouchesInView = false
         view.addGestureRecognizer(tapRecognizer)
         
-        headerTitle.text = "Новая категория"
+        headerTitle.text = "Категория"
         headerTitle.font = .systemFont(ofSize: 16, weight: .medium)
         headerTitle.textAlignment = .center
         headerTitle.translatesAutoresizingMaskIntoConstraints = false
@@ -71,8 +168,14 @@ final class CategoryListVC: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
         
-        doneButton.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(doneButton)
+        addCategoryButton.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(addCategoryButton)
+        
+        emptyStateImageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(emptyStateImageView)
+        
+        emptyStateLabel.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(emptyStateLabel)
         
         NSLayoutConstraint.activate([
             headerTitle.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
@@ -82,19 +185,29 @@ final class CategoryListVC: UIViewController {
             tableView.topAnchor.constraint(equalTo: headerTitle.bottomAnchor, constant: 0),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
-            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0),
+            tableView.bottomAnchor.constraint(equalTo: addCategoryButton.topAnchor, constant: 0),
             
-            doneButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
-            doneButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            doneButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            doneButton.heightAnchor.constraint(equalToConstant: 60)
+            addCategoryButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            addCategoryButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
+            addCategoryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
+            addCategoryButton.heightAnchor.constraint(equalToConstant: 60),
+            
+            emptyStateImageView.centerXAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerXAnchor),
+            emptyStateImageView.centerYAnchor.constraint(equalTo: view.safeAreaLayoutGuide.centerYAnchor),
+            emptyStateImageView.widthAnchor.constraint(equalToConstant: 80),
+            emptyStateImageView.heightAnchor.constraint(equalToConstant: 80),
+            
+            emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            emptyStateLabel.topAnchor.constraint(equalTo: emptyStateImageView.bottomAnchor, constant: 8),
+            emptyStateLabel.widthAnchor.constraint(equalToConstant: 343),
+            emptyStateLabel.heightAnchor.constraint(equalToConstant: 36)
         ])
     }
-    
 }
 
 extension CategoryListVC: MenuTableViewDelegate {
     func didSelectMenuItem(_ menuItem: MenuItem, at cell: MenuCell?) {
-        cell?.selectTextField()
+        guard case let .categorySelector(categoryTitle, _) = menuItem else { return }
+        viewModel.selectedCategoryTitle = categoryTitle
     }
 }

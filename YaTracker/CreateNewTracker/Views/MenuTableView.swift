@@ -15,6 +15,7 @@ final class MenuTableView: UITableView {
     var warningShown: Bool = false
     
     private var allMenuItems: [[MenuItem]] = []
+    private var menuProvider: ((IndexPath) -> UIMenu?)?
     private var texFieldsLimit: Int = 0
     
     private let cellHeight = CGFloat(75)
@@ -42,6 +43,10 @@ final class MenuTableView: UITableView {
     func addMenuItems(_ menuItems: [MenuItem]) {
         self.allMenuItems = separateToSections(menuItems)
         reloadData()
+    }
+    
+    func addMenuProvider(_ provider: @escaping ((IndexPath) -> UIMenu?)) {
+        self.menuProvider = provider
     }
     
     func updateDescriprion(at indexPath: IndexPath, with description: String) {
@@ -94,11 +99,11 @@ extension MenuTableView: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let item = allMenuItems[indexPath.section][indexPath.row]
         switch item {
-        case .decorCollection(let collectionDelegate):
+        case .decorCollection(let onDecorSelected):
             guard let cell = tableView.dequeueReusableCell(withIdentifier: MenuDecorCell.reuseIdentifier, for: indexPath) as? MenuDecorCell else {
                 return UITableViewCell()
             }
-            cell.configure(collectionDelegate: collectionDelegate)
+            cell.configure(onDecorSelected: onDecorSelected)
             return cell
         default:
             guard let cell = tableView.dequeueReusableCell(withIdentifier: MenuCell.reuseIdentifier, for: indexPath) as? MenuCell else {
@@ -137,5 +142,10 @@ extension MenuTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         guard case .textField = allMenuItems[section].first else { return 0 }
         return warningShown ? footerHeight : 0
+    }
+    
+    func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let menu = menuProvider?(indexPath) else { return nil }
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: { _ in menu })
     }
 }

@@ -28,7 +28,7 @@ final class NewTrackerTextField: UITextField {
     }
     
     private func setSearchAction() {
-        addTarget(self, action: #selector(textDidChange), for: .editingChanged)
+        addTarget(self, action: #selector(textDidChange), for: .allEditingEvents)
     }
     
     private func configure() {
