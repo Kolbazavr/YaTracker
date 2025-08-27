@@ -15,6 +15,7 @@ final class MenuTableView: UITableView {
     var warningShown: Bool = false
     
     private var allMenuItems: [[MenuItem]] = []
+    private var allCells: [[UITableViewCell]] = []
     private var menuProvider: ((IndexPath) -> UIMenu?)?
     private var texFieldsLimit: Int = 0
     
@@ -42,6 +43,7 @@ final class MenuTableView: UITableView {
     
     func addMenuItems(_ menuItems: [MenuItem]) {
         self.allMenuItems = separateToSections(menuItems)
+        self.allCells = precreateAllCells()
         reloadData()
     }
     
@@ -62,9 +64,22 @@ final class MenuTableView: UITableView {
         
         dataSource = self
         delegate = self
-        
-        register(MenuCell.self, forCellReuseIdentifier: MenuCell.reuseIdentifier)
-        register(MenuDecorCell.self, forCellReuseIdentifier: MenuDecorCell.reuseIdentifier)
+    }
+    
+    private func precreateAllCells() -> [[UITableViewCell]] {
+        allMenuItems.map { section in
+            section.map { item in
+                if case let .decorCollection(onDecorSelected: onDecorSelected) = item {
+                    let cell = MenuDecorCell(style: .default, reuseIdentifier: nil)
+                    cell.configure(onDecorSelected: onDecorSelected)
+                    return cell
+                } else {
+                    let cell = MenuCell(style: .default, reuseIdentifier: nil)
+                    cell.configureCell(with: item, delegate: self)
+                    return cell
+                }
+            }
+        }
     }
     
     private func separateToSections(_ menuItems: [MenuItem]) -> [[MenuItem]] {
@@ -97,21 +112,7 @@ extension MenuTableView: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let item = allMenuItems[indexPath.section][indexPath.row]
-        switch item {
-        case .decorCollection(let onDecorSelected):
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: MenuDecorCell.reuseIdentifier, for: indexPath) as? MenuDecorCell else {
-                return UITableViewCell()
-            }
-            cell.configure(onDecorSelected: onDecorSelected)
-            return cell
-        default:
-            guard let cell = tableView.dequeueReusableCell(withIdentifier: MenuCell.reuseIdentifier, for: indexPath) as? MenuCell else {
-                return UITableViewCell()
-            }
-            cell.configureCell(with: item, delegate: self)
-            return cell
-        }
+        return allCells[indexPath.section][indexPath.row]
     }
 }
 

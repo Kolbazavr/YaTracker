@@ -71,6 +71,10 @@ final class AddNewCategoryVC: UIViewController  {
         tableView.showWarningFooter(with: warningText ?? "", show: warningText != nil)
     }
     
+    @objc private func hideKeyboard() {
+        view.endEditing(true)
+    }
+    
     @objc private func didTapDoneButton() {
         navigationController?.popViewController(animated: true)
         viewModel.processCategory()
@@ -78,6 +82,10 @@ final class AddNewCategoryVC: UIViewController  {
     
     private func setupUI() {
         view.backgroundColor = .ypWhite
+        
+        let tapRecognizer: UITapGestureRecognizer = .init(target: self, action: #selector(hideKeyboard))
+        tapRecognizer.cancelsTouchesInView = false
+        view.addGestureRecognizer(tapRecognizer)
         
         headerTitle.text = viewModel.categoryToRename == nil ? "Новая категория" : "Редактирование категории"
         headerTitle.font = .systemFont(ofSize: 16, weight: .medium)

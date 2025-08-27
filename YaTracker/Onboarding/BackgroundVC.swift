@@ -14,7 +14,7 @@ final class BackgroundVC: UIViewController {
     
     init(image: UIImage, text: String) {
         imageView = UIImageView(image: image)
-        imageView.contentMode = .scaleAspectFit
+        imageView.contentMode = .scaleAspectFill
         
         label = UILabel()
         label.numberOfLines = 2
