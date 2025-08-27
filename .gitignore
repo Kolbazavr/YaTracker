@@ -1,7 +1,28 @@
+# Standard macOS metadata
 .DS_Store
-/.build
-.xcconfig
-/Packages
-xcuserdata/
+
+# Xcode user-specific data
+**/xcuserdata/
+
+# Xcode build products and auto-generated files
+build/
 DerivedData/
-.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+
+# Swift Package Manager generated files
+.swiftpm/
+Packages/
+.xcworkspace
+
+# App-specific config (you mentioned .xcconfig, so you might be using them)
+# Keep this if you don't want to commit your local config overrides.
+.xcconfig
+
+# Misc
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
