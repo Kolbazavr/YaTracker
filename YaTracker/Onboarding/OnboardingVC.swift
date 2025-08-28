@@ -11,8 +11,8 @@ final class OnboardingVC: UIPageViewController {
     
     var onSkip: (() -> Void)?
     
-    let firstPageText = "Отслеживайте только" + "\n" + "то, что хотите"
-    let secondPageText = "Даже если это" + "\n" + "не литры воды и йога"
+    let firstPageText = "Отслеживайте только\nто, что хотите"
+    let secondPageText = "Даже если это\nне литры воды и йога"
     
     private lazy var pages: [UIViewController] = {
         let first = BackgroundVC(image: UIImage(resource: .onboarding1), text: firstPageText)

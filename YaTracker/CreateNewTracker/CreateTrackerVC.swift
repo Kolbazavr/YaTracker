@@ -7,10 +7,12 @@
 
 import UIKit
 
+@MainActor
 protocol MenuTableViewDelegate: AnyObject {
     func didSelectMenuItem(_ menuItem: MenuItem, at cell: MenuCell?)
 }
 
+@MainActor
 protocol MenuTextFieldDelegate: AnyObject {
     func checkTrackerName(_ name: String, isOverLimit: Bool)
 }

@@ -6,11 +6,9 @@
 //
 
 import UIKit
-import Combine
 
+@MainActor
 final class AddNewCategoryVC: UIViewController  {
-    
-    private var cancellables = Set<AnyCancellable>()
     
     private let viewModel: CategoryListViewModel
     private let headerTitle = UILabel()
@@ -41,23 +39,18 @@ final class AddNewCategoryVC: UIViewController  {
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        cancellables.removeAll()
+        viewModel.newCategoryTitleDidChange = nil
+        viewModel.warningDidChange = nil
     }
     
     private func bindViewModel() {
-        viewModel.$newCategoryTitle
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newCategoryTitle in
-                self?.doneButton.isEnabled = !(newCategoryTitle?.isEmpty ?? true)
-            }
-            .store(in: &cancellables)
+        viewModel.newCategoryTitleDidChange = { [weak self] newCategoryTitle in
+            self?.doneButton.isEnabled = !(newCategoryTitle?.isEmpty ?? true)
+        }
         
-        viewModel.$warning
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] warningText in
-                self?.showWarning(with: warningText)
-            }
-            .store(in: &cancellables)
+        viewModel.warningDidChange = { [weak self] warningText in
+            self?.showWarning(with: warningText)
+        }
     }
     
     private func setupTableViewItems() {

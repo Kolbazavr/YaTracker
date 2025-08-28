@@ -6,21 +6,21 @@
 //
 
 import UIKit
-import Combine
 
 protocol CategoryListVCDelegate: AnyObject {
     func didSelectCategory(categoryTitle: String)
 }
 
+@MainActor
 final class CategoryListVC: UIViewController {
     
     weak var delegate: CategoryListVCDelegate?
     
-    private var cancellables = Set<AnyCancellable>()
-    
     private let viewModel: CategoryListViewModel
     private let headerTitle = UILabel()
     private let tableView = MenuTableView()
+    
+    private var emptyStateImageView = UIImageView(image: UIImage(resource: .emptyState))
     
     private lazy var addCategoryButton: UIButton = {
         let button = DoneButton(type: .system)
@@ -38,12 +38,7 @@ final class CategoryListVC: UIViewController {
         label.text = "Привычки и события можно\nобъединить по смыслу"
         return label
     }()
-    
-    private lazy var emptyStateImageView: UIImageView = {
-        let imageView = UIImageView(image: UIImage(resource: .emptyState))
-        return imageView
-    }()
-    
+
     init(selectedCategory: String? = nil, categoryStore: TrackerCategoryStore, delegate: CategoryListVCDelegate? = nil) {
         self.viewModel = CategoryListViewModel(categoryStore: categoryStore, preselectedCategoryTitle: selectedCategory)
         self.delegate = delegate
@@ -62,29 +57,20 @@ final class CategoryListVC: UIViewController {
     }
         
     private func bindViewModel() {
-        viewModel.$categories
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] categories in
-                self?.showEmptyStateStub(categories.isEmpty)
-                self?.updateTableViewItems()
-            }
-            .store(in: &cancellables)
+        viewModel.categoriesDidChange = { [weak self] categories in
+            self?.showEmptyStateStub(categories.isEmpty)
+            self?.updateTableViewItems()
+        }
         
-        viewModel.$selectedCategoryTitle
-            .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] title in
-                self?.categoryTitleWasSelected(self?.viewModel.selectedCategoryTitle)
-            }
-            .store(in: &cancellables)
+        viewModel.selectedCategoryDidChange = { [weak self] title in
+            self?.categoryTitleWasSelected(title)
+        }
         
-        viewModel.$categoryToRename
-            .dropFirst()
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.navigateToAddNewCategory()
-            }
-            .store(in: &cancellables)
+        viewModel.categoryToRenameDidChange = { [weak self] _ in
+            self?.navigateToAddNewCategory()
+        }
+        
+        viewModel.loadCategories()
     }
     
     private func setupTableView() {

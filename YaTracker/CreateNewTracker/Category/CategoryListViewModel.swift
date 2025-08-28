@@ -5,15 +5,22 @@
 //  Created by ANTON ZVERKOV on 24.08.2025.
 //
 
-import Combine
+
 import Foundation
 
-class CategoryListViewModel {
-    @Published var categories: [TrackerCategory] = []
-    @Published var selectedCategoryTitle: String?
-    @Published var warning: String? = nil
-    @Published var categoryToRename: String? = nil
-    @Published var newCategoryTitle: String? = nil
+@MainActor
+final class CategoryListViewModel {
+    var categories: [TrackerCategory] = [] { didSet { categoriesDidChange?(categories) } }
+    var selectedCategoryTitle: String? { didSet { selectedCategoryDidChange?(selectedCategoryTitle) } }
+    var warning: String? = nil { didSet { warningDidChange?(warning) } }
+    var categoryToRename: String? = nil { didSet { categoryToRenameDidChange?(categoryToRename) } }
+    var newCategoryTitle: String? = nil { didSet { newCategoryTitleDidChange?(newCategoryTitle) } }
+    
+    var categoriesDidChange: (([TrackerCategory]) -> Void)?
+    var selectedCategoryDidChange: ((String?) -> Void)?
+    var warningDidChange: ((String?) -> Void)?
+    var categoryToRenameDidChange: ((String?) -> Void)?
+    var newCategoryTitleDidChange: ((String?) -> Void)?
     
     let maxNameLength: Int = 30
     
@@ -35,10 +42,13 @@ class CategoryListViewModel {
     init(categoryStore: TrackerCategoryStore, preselectedCategoryTitle: String? = nil) {
         self.selectedCategoryTitle = preselectedCategoryTitle
         self.categoryStore = categoryStore
-        categoryStore.onChange = { [weak self] categories in
+        categoryStore.setup { [weak self] categories in
             self?.categories = categories
         }
-        self.categories = categoryStore.fetchCategories()
+    }
+    
+    func loadCategories() {
+        categories = categoryStore.fetchCategories()
     }
     
     func processCategory() {

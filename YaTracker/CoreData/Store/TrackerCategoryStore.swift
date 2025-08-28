@@ -10,7 +10,7 @@ import UIKit
 
 final class TrackerCategoryStore: NSObject {
     
-    var onChange: (([TrackerCategory]) -> Void)?
+    private var onChange: (([TrackerCategory]) -> Void)?
     
     private let context: NSManagedObjectContext
     
@@ -32,6 +32,10 @@ final class TrackerCategoryStore: NSObject {
     
     init(context: NSManagedObjectContext) {
         self.context = context
+    }
+    
+    func setup(onChange action: @escaping ([TrackerCategory]) -> Void) {
+        self.onChange = action
     }
     
     func fetchCategories() -> [TrackerCategory] {
