@@ -28,6 +28,7 @@ final class TrackersViewController: UIViewController {
 
     private let trackerStore: TrackerStore
     private let recordStore: TrackerRecordStore
+    private let categoryStore: TrackerCategoryStore
     
     private enum SearchCondition {
         case byDay(WeekDay)
@@ -36,9 +37,10 @@ final class TrackersViewController: UIViewController {
     
     private let headerHeight = CGFloat(30)
     
-    init(trackerStore: TrackerStore, recordStore: TrackerRecordStore) {
+    init(trackerStore: TrackerStore, recordStore: TrackerRecordStore, categoryStore: TrackerCategoryStore) {
         self.trackerStore = trackerStore
         self.recordStore = recordStore
+        self.categoryStore = categoryStore
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -47,7 +49,7 @@ final class TrackersViewController: UIViewController {
     }
     
     private lazy var dateTextField: DateTextField = {
-        let textField = DateTextField(maxLength: 6, onSearchAction: searchDateInCalendar)
+        let textField = DateTextField(maxLength: 6, onSearchAction: { [weak self] date in self?.searchDateInCalendar(date)})
         textField.dateTextFieldDelegate = self
         return textField
     }()
@@ -140,7 +142,7 @@ final class TrackersViewController: UIViewController {
     }
     
     @objc private func addNewTracker() {
-        let createTrackerViewController = CreateTrackerVC(trackerStore: trackerStore)
+        let createTrackerViewController = CreateTrackerVC(trackerStore: trackerStore, categoryStore: categoryStore)
         createTrackerViewController.delegate = self
         
         let navigationController = UINavigationController(rootViewController: createTrackerViewController)
@@ -212,10 +214,11 @@ extension TrackersViewController: TrackerCellDelegate {
 extension TrackersViewController {
     private func configureDataSource() {
         let cellRegistration = UICollectionView.CellRegistration<TrackerCellCard, Tracker> { cell, indexPath, tracker in
+            
             let recordsCount = self.trackerStore.getCompletedTrackersCount(for: tracker.id)
             let isCompletedToday = self.trackerStore.isTrackerCompletedToday(tracker.id, date: self.selectedDate)
-            
             let enableButton = self.selectedDate <= Date()
+            
             cell.configure(with: tracker, isCompletedToday: isCompletedToday, daysCompleted: recordsCount, enableButton: enableButton)
             cell.delegate = self
         }

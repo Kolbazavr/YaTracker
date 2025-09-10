@@ -6,7 +6,6 @@
 //
 
 import CoreData
-import UIKit
 
 final class TrackerStore: NSObject {
     
@@ -81,7 +80,6 @@ final class TrackerStore: NSObject {
     func getCompletedTrackersCount(for trackerId: UUID) -> Int {
         let request: NSFetchRequest<TrackerRecordCoreData> = TrackerRecordCoreData.fetchRequest()
         request.predicate = NSPredicate(format: "trackerId == %@", trackerId as CVarArg)
-        
         return (try? context.count(for: request)) ?? 0
     }
     
@@ -101,9 +99,11 @@ final class TrackerStore: NSObject {
     }
     
     private func fetchTrackers() -> [TrackerCategory] {
-        guard let trackersCD = trackersFRC.fetchedObjects else { return [] }
-        let groupedTrackersCD = Dictionary(grouping: trackersCD) { $0.category?.title ?? "" }
-        return groupedTrackersCD.map { TrackerCategory(title: $0, trackers: $1.compactMap { $0.toStruct() }) }.sorted()
+        guard let sections = trackersFRC.sections else { return [] }
+        return sections.compactMap { section in
+            guard let trackerCDs = section.objects as? [TrackerCoreData] else { return nil }
+            return TrackerCategory(title: section.name, trackers: trackerCDs.compactMap { $0.toStruct() })
+        }
     }
     
     private func applyFiltersAndSearch() {

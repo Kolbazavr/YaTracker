@@ -7,6 +7,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
     var trackerStore: TrackerStore!
     var recordStore: TrackerRecordStore!
+    var categoryStore: TrackerCategoryStore!
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let scene = (scene as? UIWindowScene) else { return }
@@ -18,8 +19,30 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         trackerStore = TrackerStore(context: container.viewContext)
         recordStore = TrackerRecordStore(context: container.viewContext)
+        categoryStore = TrackerCategoryStore(context: container.viewContext)
         
         let window = UIWindow(windowScene: scene)
+        self.window = window
+        
+        start(isOnboardingCompleted: UserDefaults.standard.bool(forKey: UserDefaults.isOnboardingCompletedKey))
+        window.makeKeyAndVisible()
+    }
+    
+    private func start(isOnboardingCompleted: Bool) {
+        isOnboardingCompleted ? showMain() : showOnboarding()
+    }
+    
+    private func showOnboarding() {
+        let vc = OnboardingVC()
+        vc.onSkip = { [weak self] in
+            self?.showMain()
+        }
+        window?.rootViewController = vc
+    }
+    
+    private func showMain() {
+        guard let window else { return }
+        UserDefaults.standard.set(true, forKey: UserDefaults.isOnboardingCompletedKey)
         
         let appearance = UITabBarAppearance()
         appearance.shadowColor = .lightGray
@@ -29,13 +52,13 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         tabBarController.viewControllers = [createTrackersVC(), createStatisticsVC()]
         tabBarController.tabBar.scrollEdgeAppearance = appearance
         
-        window.rootViewController = tabBarController
-        self.window = window
-        window.makeKeyAndVisible()
+        UIView.transition(with: window, duration: 0.3, options: .transitionCrossDissolve) {
+            window.rootViewController = tabBarController
+        }
     }
     
     private func createTrackersVC() -> UIViewController {
-        let vc = TrackersViewController(trackerStore: trackerStore, recordStore: recordStore)
+        let vc = TrackersViewController(trackerStore: trackerStore, recordStore: recordStore, categoryStore: categoryStore)
         vc.tabBarItem = UITabBarItem(
             title: "Трекеры",
             image: UIImage(resource: .tabBarTrackers),

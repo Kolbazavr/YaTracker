@@ -7,10 +7,12 @@
 
 import UIKit
 
+@MainActor
 protocol MenuTableViewDelegate: AnyObject {
     func didSelectMenuItem(_ menuItem: MenuItem, at cell: MenuCell?)
 }
 
+@MainActor
 protocol MenuTextFieldDelegate: AnyObject {
     func checkTrackerName(_ name: String, isOverLimit: Bool)
 }
@@ -29,10 +31,10 @@ final class CreateTrackerVC: UIViewController {
     private var selectedEmoji: String?
     private var selectedColor: String?
     private var selectedCategory: String?
-    
     private var footerView: UIView?
     
     private let trackerStore: TrackerStore
+    private let categoryStore: TrackerCategoryStore
     private let maxTextLength: Int
     private let headerTitle = UILabel()
     private let tableView: MenuTableView
@@ -64,8 +66,9 @@ final class CreateTrackerVC: UIViewController {
         return button
     }()
     
-    init(trackerStore: TrackerStore, textLimit: Int = 38) {
+    init(trackerStore: TrackerStore, categoryStore: TrackerCategoryStore, textLimit: Int = 38) {
         self.trackerStore = trackerStore
+        self.categoryStore = categoryStore
         self.maxTextLength = textLimit
         self.tableView = MenuTableView(texFieldsLimit: self.maxTextLength)
         self.decorCollectionView = DecorCollectionView()
@@ -74,6 +77,11 @@ final class CreateTrackerVC: UIViewController {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        nameCheckingWorkItem?.cancel()
     }
     
     override func viewDidLoad() {
@@ -91,16 +99,28 @@ final class CreateTrackerVC: UIViewController {
     }
     
     private func setupTableViewItems() {
-        let menuItem1: MenuItem = .textField(placeholder: "Введите название трекера", limit: maxTextLength)
+        let menuItem1: MenuItem = .textField(placeholder: "Введите название трекера", limit: maxTextLength, text: nil)
         let menuItem2: MenuItem = .navigationLink(title: "Категория", description: nil, destination: .categories)
         let menuItem3: MenuItem = .navigationLink(title: "Расписание", description: nil, destination: .schedule)
-        let menuItem4: MenuItem = .decorCollection(collectionDelegate: self)
+        let menuItem4: MenuItem = .decorCollection { [weak self] decor, isSelected in
+            self?.didTapedOnDecor(decor, wasSelected: isSelected)
+        }
         
         let allMenuItems: [MenuItem] = [menuItem1, menuItem2, menuItem3, menuItem4]
         
         tableView.menuSelectionDelegate = self
         tableView.menuTextFieldDelegate = self
         tableView.addMenuItems(allMenuItems)
+    }
+    
+    private func didTapedOnDecor(_ decor: DecorType, wasSelected: Bool) {
+        switch decor {
+        case .emoji(let string):
+            selectedEmoji = wasSelected ? string : nil
+        case .colorHex(let string):
+            selectedColor = wasSelected ? string : nil
+        }
+        checkIsAllFieldsFilled()
     }
     
     private func checkIsAllFieldsFilled() {
@@ -115,7 +135,7 @@ final class CreateTrackerVC: UIViewController {
     
     private func navigate(to destination: NavDestination) {
         let vc = switch destination {
-        case .categories: CategoryListVC(delegate: self)
+        case .categories: CategoryListVC(selectedCategory: selectedCategory, categoryStore: categoryStore, delegate: self)
         case .schedule: ScheduleVC(selectedWeekDays: selectedWeekDays, delegate: self)
         }
         navigationController?.pushViewController(vc, animated: true)
@@ -174,18 +194,6 @@ extension CreateTrackerVC: MenuTextFieldDelegate {
         }
         nameCheckingWorkItem = newWorkItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: newWorkItem)
-    }
-}
-
-extension CreateTrackerVC: DecorCollectionViewDelegate {
-    func didTapedOnDecor(_ decor: DecorType, wasSelected: Bool) {
-        switch decor {
-        case .emoji(let string):
-            selectedEmoji = wasSelected ? string : nil
-        case .colorHex(let string):
-            selectedColor = wasSelected ? string : nil
-        }
-        checkIsAllFieldsFilled()
     }
 }
 

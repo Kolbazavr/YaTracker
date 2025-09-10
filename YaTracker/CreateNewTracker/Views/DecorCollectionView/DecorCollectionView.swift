@@ -13,7 +13,7 @@ protocol DecorCollectionViewDelegate: AnyObject {
 
 final class DecorCollectionView: UICollectionView {
     
-    weak var decorDelegate: DecorCollectionViewDelegate?
+    var onDecorSelected: ((DecorType, Bool) -> Void)?
     
     private let allItems: [[DecorType]]
     private let headers: [String] = ["Emoji", "Цвет"]
@@ -48,11 +48,11 @@ extension DecorCollectionView: UICollectionViewDelegate {
                 deselectItem(at: selectedIndexPath, animated: false)
             }
         }
-        decorDelegate?.didTapedOnDecor(allItems[indexPath.section][indexPath.item], wasSelected: true)
+        onDecorSelected?(allItems[indexPath.section][indexPath.item], true)
     }
     
     func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-        decorDelegate?.didTapedOnDecor(allItems[indexPath.section][indexPath.item], wasSelected: false)
+        onDecorSelected?(allItems[indexPath.section][indexPath.item], false)
     }
 }
 

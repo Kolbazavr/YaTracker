@@ -41,7 +41,7 @@ final class MenuCell: UITableViewCell {
     }()
     
     private lazy var searchTextField: NewTrackerTextField = {
-        let textField = NewTrackerTextField() { self.delegate?.userIsTypingSomeBullshit($0, $1) }
+        let textField = NewTrackerTextField() { [weak self] in self?.delegate?.userIsTypingSomeBullshit($0, $1) }
         return textField
     }()
     
@@ -72,12 +72,14 @@ final class MenuCell: UITableViewCell {
         menuItem = cellItem
         self.delegate = delegate
         switch cellItem {
-        case .textField(let placeholder, let limit):
-            addTextField(placeholder: placeholder, limit: limit)
+        case .textField(let placeholder, let limit, let text):
+            addTextField(placeholder: placeholder, limit: limit, text: text)
         case .navigationLink(let title, let description, let destination):
             addNavigationLink(title: title, description: description, destination: destination)
         case .weekDaySelector(toggle: let isOn, day: let weekDay):
             addWeekDay(weekDay: weekDay, toggle: isOn)
+        case .categorySelector(let title, let isSelected):
+            addCategorySelector(title: title, isSelected: isSelected)
         default: break
         }
     }
@@ -94,9 +96,10 @@ final class MenuCell: UITableViewCell {
         searchTextField.becomeFirstResponder()
     }
     
-    private func addTextField(placeholder: String?, limit: Int) {
+    private func addTextField(placeholder: String?, limit: Int, text: String? = nil) {
         searchTextField.placeholder = placeholder
         searchTextField.maxLength = limit
+        searchTextField.text = text
         vStackView.addArrangedSubview(searchTextField)
     }
     
@@ -113,6 +116,12 @@ final class MenuCell: UITableViewCell {
         vStackView.addArrangedSubview(titleLabel)
         toggleSwitch.isOn = toggle
         hStackView.addArrangedSubview(toggleSwitch)
+    }
+    
+    private func addCategorySelector(title: String, isSelected: Bool) {
+        titleLabel.text = title
+        vStackView.addArrangedSubview(titleLabel)
+        accessoryType = isSelected ? .checkmark : .none
     }
 }
 
