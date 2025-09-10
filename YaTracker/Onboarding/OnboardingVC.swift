@@ -15,8 +15,8 @@ final class OnboardingVC: UIPageViewController {
     let secondPageText = "Даже если это\nне литры воды и йога"
     
     private lazy var pages: [UIViewController] = {
-        let first = BackgroundVC(image: UIImage(resource: .onboarding1), text: firstPageText)
-        let second = BackgroundVC(image: UIImage(resource: .onboarding2), text: secondPageText)
+        let first = BackgroundVC(image: UIImage(resource: .onboarding1), text: firstPageText, isEyesCrackerOn: true)
+        let second = BackgroundVC(image: UIImage(resource: .onboarding2), text: secondPageText, isSeizureStarterOn: true)
         return [first, second]
     }()
     

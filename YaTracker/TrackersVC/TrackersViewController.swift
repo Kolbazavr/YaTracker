@@ -214,10 +214,11 @@ extension TrackersViewController: TrackerCellDelegate {
 extension TrackersViewController {
     private func configureDataSource() {
         let cellRegistration = UICollectionView.CellRegistration<TrackerCellCard, Tracker> { cell, indexPath, tracker in
+            
             let recordsCount = self.trackerStore.getCompletedTrackersCount(for: tracker.id)
             let isCompletedToday = self.trackerStore.isTrackerCompletedToday(tracker.id, date: self.selectedDate)
-            
             let enableButton = self.selectedDate <= Date()
+            
             cell.configure(with: tracker, isCompletedToday: isCompletedToday, daysCompleted: recordsCount, enableButton: enableButton)
             cell.delegate = self
         }

@@ -112,18 +112,16 @@ extension MenuTableView: UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        return allCells[indexPath.section][indexPath.row]
+        allCells[indexPath.section][indexPath.row]
     }
 }
 
 extension MenuTableView: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         let item = allMenuItems[indexPath.section][indexPath.row]
-        switch item {
-        case .decorCollection:
-            return decorCollectionHeight
-        default:
-            return cellHeight
+        return switch item {
+        case .decorCollection: decorCollectionHeight
+        default: cellHeight
         }
     }
     

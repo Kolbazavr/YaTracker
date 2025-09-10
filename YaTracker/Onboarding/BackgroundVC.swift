@@ -9,10 +9,16 @@ import UIKit
 
 final class BackgroundVC: UIViewController {
     
-    let imageView: UIImageView
-    let label: UILabel
+    private let circleSizes: [CGFloat] = [260, 400, 550, 710, 860]
+    private let killMyEyes: Bool
+    private let startSeizure: Bool
+    private let imageView: UIImageView
+    private let label: UILabel
     
-    init(image: UIImage, text: String) {
+    init(image: UIImage, text: String, isEyesCrackerOn: Bool = false, isSeizureStarterOn: Bool = false) {
+        self.killMyEyes = isEyesCrackerOn
+        self.startSeizure = isSeizureStarterOn
+        
         imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFill
         
@@ -33,6 +39,74 @@ final class BackgroundVC: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setup()
+        if killMyEyes {
+            setupRotatingThingy()
+            view.backgroundColor = .ypBlue
+            createWhiteThingy()
+        }
+        if startSeizure {
+            setupMovingThingy()
+            view.backgroundColor = .ypRed
+            createWhiteThingy()
+        }
+    }
+    
+    private func setupMovingThingy() {
+        let frame = CGRect(
+            x: 0,
+            y: 0,
+            width: view.bounds.width,
+            height: view.bounds.height
+        )
+        let seizureStarterView = BrainMelterView(frame: frame)
+        view.insertSubview(seizureStarterView, aboveSubview: imageView)
+    }
+    
+    private func createWhiteThingy() {
+        imageView.isHidden = true
+        let topColor = UIColor.clear
+        let bottomColor = UIColor.white.withAlphaComponent(0.8)
+        
+        let whiteGradient = CAGradientLayer()
+        whiteGradient.type = .axial
+        whiteGradient.colors = [topColor.cgColor, bottomColor.cgColor]
+        whiteGradient.locations = [0.0, 1.0]
+        whiteGradient.frame = view.bounds
+        
+        let gradientView = UIView(frame: view.bounds)
+        gradientView.layer.addSublayer(whiteGradient)
+        view.insertSubview(gradientView, belowSubview: label)
+    }
+    
+    private func setupRotatingThingy() {
+        let itemSize: CGFloat = 50
+        for (index, size) in circleSizes.enumerated() {
+            let frame = CGRect(
+                x: (view.bounds.width - size) / 2,
+                y: (view.bounds.height - size) / 2,
+                width: size,
+                height: size
+            )
+            let anotherEyesCrackerView = EyesCrackerView(
+                frame: frame,
+                itemView: EyesCrackerView.Items.allCases[index % EyesCrackerView.Items.allCases.count],
+                itemsCount: 6 * (index + 1),
+                itemSize: itemSize,
+                rotationDirection: index % 2 == 0 ? 1 : -1
+            )
+            view.insertSubview(anotherEyesCrackerView, aboveSubview: imageView)
+        }
+        
+        let centerLogo = EyesCrackerView.Items.practoLogo.view
+        centerLogo.frame = CGRect(
+            x: view.bounds.width / 2,
+            y: view.bounds.height / 2,
+            width: itemSize,
+            height: itemSize
+        )
+        centerLogo.center.y -= itemSize / 2
+        centerLogo.center.x -= itemSize / 2
+        view.insertSubview(centerLogo, aboveSubview: imageView)
     }
     
     private func setup() {
