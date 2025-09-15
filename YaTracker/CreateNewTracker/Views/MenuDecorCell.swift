@@ -21,8 +21,9 @@ final class MenuDecorCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(onDecorSelected: ((DecorType, Bool) -> Void)?) {
+    func configure(selectedDecor: [DecorType], onDecorSelected: ((DecorType, Bool) -> Void)?) {
         collectionView.onDecorSelected = { onDecorSelected?($0, $1) }
+        collectionView.preSelectedDecor = selectedDecor
         backgroundColor = .ypWhite
         selectionStyle = .none
         contentView.addSubview(collectionView)

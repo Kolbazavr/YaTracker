@@ -14,6 +14,7 @@ protocol DecorCollectionViewDelegate: AnyObject {
 final class DecorCollectionView: UICollectionView {
     
     var onDecorSelected: ((DecorType, Bool) -> Void)?
+    var preSelectedDecor: [DecorType] = []
     
     private let allItems: [[DecorType]]
     private let headers: [String] = ["Emoji", "Цвет"]
@@ -28,7 +29,7 @@ final class DecorCollectionView: UICollectionView {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func setup() {
+    private func setup() {
         allowsSelection = false
         allowsMultipleSelection = true
         delegate = self
@@ -69,7 +70,14 @@ extension DecorCollectionView: UICollectionViewDataSource {
         guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: DecorCell.reuseIdentifier, for: indexPath) as? DecorCell else {
             fatalError("This should be registered DecorCell")
         }
-        cell.configure(with: allItems[indexPath.section][indexPath.item])
+        let item = allItems[indexPath.section][indexPath.item]
+        let isSelected = preSelectedDecor.contains { $0 == item }
+        cell.configure(with: item)
+        
+        if isSelected {
+            collectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+        }
+        
         return cell
     }
     

@@ -11,8 +11,7 @@ enum MenuItem {
     case textField(placeholder: String, limit: Int, text: String?)
     case navigationLink(title: String, description: String?, destination: NavDestination)
     case weekDaySelector(toggle: Bool, day: WeekDay)
-    case decorCollection(onDecorSelected: ((DecorType, Bool) -> Void)?)
-    
+    case decorCollection(tracker: Tracker?, onDecorSelected: ((DecorType, Bool) -> Void)?)
     case categorySelector(categoryTitle: String, isSelected: Bool)
     
     var typeName: String {
