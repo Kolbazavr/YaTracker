@@ -8,7 +8,11 @@
 import Foundation
 import CoreData
 
-final class TrackerRecordStore: NSObject {
+protocol TrackerRecordStoreProtocol {
+    func toggleRecord(for tracker: Tracker, on date: Date)
+}
+
+final class TrackerRecordStore: NSObject, TrackerRecordStoreProtocol {
     
     private let context: NSManagedObjectContext
     

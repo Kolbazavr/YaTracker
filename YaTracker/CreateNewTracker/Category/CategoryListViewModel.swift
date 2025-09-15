@@ -25,7 +25,7 @@ final class CategoryListViewModel {
     let maxNameLength: Int = 30
     
     private var nameCheckingWorkItem: DispatchWorkItem?
-    private let categoryStore: TrackerCategoryStore
+    private let categoryStore: TrackerCategoryStoreProtocol
     
     private enum WarningType {
         case nameLength(Int)
@@ -39,7 +39,7 @@ final class CategoryListViewModel {
         }
     }
     
-    init(categoryStore: TrackerCategoryStore, preselectedCategoryTitle: String? = nil) {
+    init(categoryStore: TrackerCategoryStoreProtocol, preselectedCategoryTitle: String? = nil) {
         self.selectedCategoryTitle = preselectedCategoryTitle
         self.categoryStore = categoryStore
         categoryStore.setup { [weak self] categories in

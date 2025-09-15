@@ -7,9 +7,24 @@
 
 import CoreData
 
-final class TrackerStore: NSObject {
+protocol TrackerStoreProtocol {
+//    var onChange: (([TrackerCategory]) -> Void)? { get set }
+    func setup(onChange action: @escaping ([TrackerCategory]) -> Void)
+    func changeWeekDayFilter(for date: Date)
+    func changeNameFilter(to name: String)
+    func setCompletionStateForFilter(_ isCompleted: Bool?, for date: Date)
+    func addTracker(_ tracker: Tracker, to categoryWithTitle: String)
+    func deleteTracker(withId id: UUID)
+    func getCompletedTrackersCount(for trackerId: UUID) -> Int
+    func checkTrackerNameExists(_ name: String) -> Bool
+    func isThereAnyTrackers(on date: Date) -> Bool
+    func categoryName(with trackerId: UUID?) -> String?
+    func isTrackerCompletedToday(_ trackerId: UUID, date: Date) -> Bool
+}
+
+final class TrackerStore: NSObject, TrackerStoreProtocol {
     
-    var onChange: (([TrackerCategory]) -> Void)?
+    private var onChange: (([TrackerCategory]) -> Void)?
     
     private var selectedWeekDay: WeekDay? = nil
     private var selectedName: String? = nil
@@ -41,6 +56,10 @@ final class TrackerStore: NSObject {
     
     init(context: NSManagedObjectContext) {
         self.context = context
+    }
+    
+    func setup(onChange action: @escaping ([TrackerCategory]) -> Void) {
+        self.onChange = action
     }
     
     func changeWeekDayFilter(for date: Date) {

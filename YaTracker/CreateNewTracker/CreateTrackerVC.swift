@@ -36,8 +36,8 @@ final class CreateTrackerVC: UIViewController {
     private var selectedCategory: String?
     private var footerView: UIView?
     
-    private let trackerStore: TrackerStore
-    private let categoryStore: TrackerCategoryStore
+    private let trackerStore: TrackerStoreProtocol
+    private let categoryStore: TrackerCategoryStoreProtocol
     private let maxTextLength: Int
     private let headerTitle = UILabel()
     private let tableView: MenuTableView
@@ -78,7 +78,7 @@ final class CreateTrackerVC: UIViewController {
         return button
     }()
     
-    init(trackerStore: TrackerStore, categoryStore: TrackerCategoryStore, textLimit: Int = 38, trackerToEdit: Tracker? = nil) {
+    init(trackerStore: TrackerStoreProtocol, categoryStore: TrackerCategoryStoreProtocol, textLimit: Int = 38, trackerToEdit: Tracker? = nil) {
         self.trackerStore = trackerStore
         self.categoryStore = categoryStore
         self.maxTextLength = textLimit

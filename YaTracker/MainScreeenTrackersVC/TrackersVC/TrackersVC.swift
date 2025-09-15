@@ -27,9 +27,9 @@ final class TrackersViewController: UIViewController {
     private var selectedDate: Date = Date().onlyDate
     private var selectedFilter: FilterType?
 
-    private let trackerStore: TrackerStore
-    private let recordStore: TrackerRecordStore
-    private let categoryStore: TrackerCategoryStore
+    private let trackerStore: TrackerStoreProtocol
+    private let recordStore: TrackerRecordStoreProtocol
+    private let categoryStore: TrackerCategoryStoreProtocol
     
     private enum SearchCondition {
         case byDate(Date)
@@ -38,7 +38,7 @@ final class TrackersViewController: UIViewController {
     
     private let headerHeight = CGFloat(30)
     
-    init(trackerStore: TrackerStore, recordStore: TrackerRecordStore, categoryStore: TrackerCategoryStore) {
+    init(trackerStore: TrackerStoreProtocol, recordStore: TrackerRecordStoreProtocol, categoryStore: TrackerCategoryStoreProtocol) {
         self.trackerStore = trackerStore
         self.recordStore = recordStore
         self.categoryStore = categoryStore
@@ -119,7 +119,7 @@ final class TrackersViewController: UIViewController {
     }
     
     private func setupStores() {
-        trackerStore.onChange = { [weak self] categories in
+        trackerStore.setup { [weak self] categories in
             self?.applySnapshot(for: categories)
             self?.showStub(categories.isEmpty)
         }
