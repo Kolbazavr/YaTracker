@@ -267,6 +267,8 @@ extension CreateTrackerVC {
         view.addSubview(tableView)
         
         if isEditingTracker {
+            bigAssRecordsCountLabel.text = trackerStore.getCompletedTrackersCount(for: trackerToEdit!.id).dayStringRU
+            
             bigAssRecordsCountLabel.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(bigAssRecordsCountLabel)
             
@@ -283,7 +285,7 @@ extension CreateTrackerVC {
             headerTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             headerTitle.heightAnchor.constraint(equalToConstant: 79),
             
-            tableView.topAnchor.constraint(equalTo: isEditingTracker ? bigAssRecordsCountLabel.bottomAnchor : headerTitle.bottomAnchor, constant: 0),
+            tableView.topAnchor.constraint(equalTo: isEditingTracker ? bigAssRecordsCountLabel.bottomAnchor : headerTitle.bottomAnchor, constant: isEditingTracker ? 40 : 0),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 0),

@@ -26,6 +26,8 @@ final class TrackersViewController: UIViewController {
     private var dataSource: TrackerDataSource!
     private var selectedDate: Date = Date().onlyDate
     private var selectedFilter: FilterType?
+    
+    private let analyticsService = AnalyticsService()
 
     private let trackerStore: TrackerStoreProtocol
     private let recordStore: TrackerRecordStoreProtocol
@@ -118,6 +120,16 @@ final class TrackersViewController: UIViewController {
         tapDetector.isUserInteractionEnabled = false
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        analyticsService.report(model: MetricaModel(event: .open, screen: .main, item: .none))
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        analyticsService.report(model: MetricaModel(event: .close, screen: .main, item: .none))
+    }
+    
     private func setupStores() {
         trackerStore.setup { [weak self] categories in
             self?.applySnapshot(for: categories)
@@ -171,6 +183,7 @@ final class TrackersViewController: UIViewController {
     }
     
     @objc private func addNewTracker() {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .addTrack))
         goToTrackerCreation(trackerToEdit: nil)
     }
     
@@ -181,6 +194,7 @@ final class TrackersViewController: UIViewController {
     }
     
     @objc private func showFilters() {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .filter))
         let filtersVC = FiltersVC(isForToday: selectedDate == Date().onlyDate, selectedFilter: selectedFilter)
         filtersVC.delegate = self
         
@@ -240,14 +254,17 @@ extension TrackersViewController: CalendarViewDelegate {
 
 extension TrackersViewController: TrackerCellDelegate {
     func didTapEdit(_ tracker: Tracker) {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .edit))
         goToTrackerCreation(trackerToEdit: tracker)
     }
     
     func didTapDelete(_ tracker: Tracker) {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .delete))
         showDeleteAlert(for: tracker)
     }
     
     func didTapTrackerCell(with tracker: Tracker) {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .track))
         recordStore.toggleRecord(for: tracker, on: selectedDate)
     }
 }
@@ -333,6 +350,7 @@ extension TrackersViewController {
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .ypWhite
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.contentInset = .init(top: 0, left: 0, bottom: 90, right: 0)
         view.insertSubview(collectionView, belowSubview: tapDetector)
         
         emptyStateImageView.translatesAutoresizingMaskIntoConstraints = false

@@ -1,0 +1,77 @@
+/* 
+  Localizable.strings
+  YaTracker
+
+  Created by ANTON ZVERKOV on 16.09.2025.
+  
+*/
+
+"locale" = "ru_RU";
+
+"track_only_what_you_want" = "Отслеживайте только то, что хотите";
+"liters_of_water_and_yoga" = "Даже если это не литры воды и йога";
+"these_are_the_technologies" = "Вот это технологии!";
+"habits_and_events_can_be_combined" = "Привычки и события можно\nобъединить по смыслу";
+"there_is_nothing_to_analyze_yet" = "Анализировать пока нечего";
+"nothing_was_found" = "Ничего не найдено";
+
+"search" = "Поиск";
+"what_are_we_going_to_track" = "Что будем отслеживать?";
+
+"done" = "Готово";
+"cancel" = "Отменить";
+"create" = "Создать";
+"filters" = "Фильтры";
+"add_a_category" = "Новая категория";
+
+"edit" = "Редактировать";
+"delete" = "Удалить";
+
+"monday" = "Понедельник";
+"tuesday" = "Вторник";
+"wednesday" = "Среда";
+"thursday" = "Четверг";
+"friday" = "Пятница";
+"saturday" = "Суббота";
+"sunday" = "Воскресенье";
+
+"monday_short" = "Пн";
+"tuesday_short" = "Вт";
+"wednesday_short" = "Ср";
+"thursday_short" = "Чт";
+"friday_short" = "Пт";
+"saturday_short" = "Сб";
+"sunday_short" = "Вс";
+
+"every_day" = "Каждый день";
+
+"trackers" = "Трекеры";
+"statistics" = "Статистика";
+"new_habit" = "Новая привычка";
+"edit_habit" = "Редактирование привычки";
+"edit_category" = "Редактирование категории";
+"new_category" = "Добавить категорию";
+"category" = "Категория";
+"schedule" = "Расписание";
+
+"emoji" = "Emoji";
+"color" = "Цвет";
+
+"enter_tracker_name" = "Введите название трекера";
+"enter_category_name" = "Введите название категории";
+"the_limit_is_N_characters" = "Ограничение %d символов";
+"already_exists" = "Уже есть такая";
+
+"best_period" = "Лучший период";
+"ideal_days" = "Идеальные дни";
+"trackers_completed" = "Трекеров завершено";
+"average_value" = "Среднее значение";
+
+"cancel_title" = "Отменить";
+"are_you_sure_you_want_to_delete_the_tracker" = "Удалить привычку?";
+"are_you_sure_you_want_to_delete_category" = "Удалить категорию?";
+
+"all_trackers" = "Все трекеры";
+"trackers_for_today" = "Трекеры на сегодня";
+"completed" = "Завершенные";
+"unfinished" = "Не завершенные";

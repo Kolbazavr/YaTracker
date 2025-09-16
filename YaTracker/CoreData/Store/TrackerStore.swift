@@ -97,8 +97,7 @@ final class TrackerStore: NSObject, TrackerStoreProtocol {
             trackerIdRequest.fetchLimit = 1
             
             let trackerToSave = try? self.context.fetch(trackerIdRequest).first ?? {
-                print("new tracker")
-                return TrackerCoreData(context: self.context)
+                TrackerCoreData(context: self.context)
             }()
             
             guard let trackerToSave else { return }

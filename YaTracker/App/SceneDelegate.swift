@@ -68,7 +68,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     private func createStatisticsVC() -> UIViewController {
-        let vc = StatisticsVC()
+        let vc = StatisticsVC(recordStore: recordStore)
         vc.tabBarItem = UITabBarItem(
             title: "Статистика",
             image: UIImage(resource: .tabBarStatistics),
