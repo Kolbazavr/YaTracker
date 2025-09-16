@@ -15,7 +15,7 @@ final class FiltersButton: UIButton {
         super.backgroundColor = .ypBlue
         super.layer.cornerRadius = 16
         super.tintColor = .ypWhite
-        super.setTitle("Фильтры", for: .normal)
+        super.setTitle(NSLocalizedString("filters", comment: "FiltersButton"), for: .normal)
     }
     
     required init?(coder: NSCoder) {

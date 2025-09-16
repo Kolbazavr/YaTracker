@@ -103,7 +103,7 @@ final class TrackerCellCard: UICollectionViewCell {
         doneButton.setImage(UIImage(resource: isCompletedToday ? .cellCheckMark : .cellPlus), for: .normal)
         doneButton.tintColor = .ypWhite
         doneButton.isEnabled = enableButton
-        daysCounterLabel.text = daysCompleted.dayStringRU
+        daysCounterLabel.text = String.localizedStringWithFormat(NSLocalizedString("numberOfDays", comment: "CompletedDays"), daysCompleted)
     }
     
     private func setupContextMenu() {
@@ -188,12 +188,12 @@ extension TrackerCellCard: UIContextMenuInteractionDelegate {
     }
     
     private func createContextMenu() -> UIMenu {
-        let editAction = UIAction(title: "Редактировать") { [weak self] _ in
+        let editAction = UIAction(title: NSLocalizedString("edit", comment: "EditAction")) { [weak self] _ in
             guard let tracker = self?.tracker else { return }
             self?.delegate?.didTapEdit(tracker)
         }
         
-        let deleteAction = UIAction(title: "Удалить", attributes: .destructive) { [weak self] _ in
+        let deleteAction = UIAction(title: NSLocalizedString("delete", comment: "DeleteAction"), attributes: .destructive) { [weak self] _ in
             guard let tracker = self?.tracker else { return }
             self?.delegate?.didTapDelete(tracker)
         }

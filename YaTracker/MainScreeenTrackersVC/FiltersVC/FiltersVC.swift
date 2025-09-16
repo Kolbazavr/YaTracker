@@ -57,7 +57,7 @@ final class FiltersVC: UIViewController {
     private func setupUI() {
         view.backgroundColor = .ypWhite
         
-        headerTitle.text = "Фильтры"
+        headerTitle.text = NSLocalizedString("filters", comment: "Filters header")
         headerTitle.font = .systemFont(ofSize: 16, weight: .medium)
         headerTitle.textAlignment = .center
         headerTitle.translatesAutoresizingMaskIntoConstraints = false

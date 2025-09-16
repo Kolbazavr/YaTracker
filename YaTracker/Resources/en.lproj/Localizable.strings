@@ -47,10 +47,10 @@
 
 "trackers" = "Trackers";
 "statistics" = "Statistics";
-"new_habit" = "New habit";
-"edit_habit" = "Habit edition";
-"edit_category" = "Category edition";
-"new_category" = "New category";
+"new_habit" = "New Habit";
+"edit_habit" = "Habit Edition";
+"edit_category" = "Category Edition";
+"new_category" = "New Category";
 "category" = "Category";
 "schedule" = "Schedule";
 
@@ -75,3 +75,5 @@
 "trackers_for_today" = "Trackers for today";
 "completed" = "Completed";
 "unfinished" = "Unfinished";
+
+"save" = "Save";

@@ -33,8 +33,8 @@ final class CategoryListViewModel {
         
         var message: String {
             return switch self {
-            case .nameLength(let limit): "Ограничение \(limit) символов"
-            case .nameExists: "Уже есть такая"
+            case .nameLength(let limit): String(format: NSLocalizedString("the_limit_is_N_characters", comment: "LimitWarning"), limit)
+            case .nameExists: NSLocalizedString("already_exists", comment: "AlreadyExistsWarning")
             }
         }
     }

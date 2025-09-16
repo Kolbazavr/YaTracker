@@ -8,7 +8,7 @@ final class StatisticsVC: UIViewController {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = "Статистика"
+        label.text = NSLocalizedString("statistics", comment: "StatisticsHeader")
         label.font = UIFont.systemFont(ofSize: 34, weight: .bold)
         label.textAlignment = .left
         return label
@@ -22,7 +22,7 @@ final class StatisticsVC: UIViewController {
     
     private let emptyStateLabel: UILabel = {
         let label = UILabel()
-        label.text = "Анализировать пока нечего"
+        label.text = NSLocalizedString("there_is_nothing_to_analyze_yet", comment: "EmptyStateLabel")
         label.font = UIFont.systemFont(ofSize: 12, weight: .medium)
         label.textAlignment = .center
         label.isHidden = true
@@ -53,10 +53,10 @@ final class StatisticsVC: UIViewController {
         let completedCount = recordStore.allRecordsCount()
         let (perfectDays, bestPeriod, average) = recordStore.findStatisticsData()
         let data: [ (String, Int) ] = [
-            ("Лучший период", bestPeriod),
-            ("Идеальные дни", perfectDays.count),
-            ("Трекеров завершено", completedCount),
-            ("Среднее значение", average)
+            (NSLocalizedString("best_period", comment: "BestPeriod"), bestPeriod),
+            (NSLocalizedString("ideal_days", comment: "IdealDays"), perfectDays.count),
+            (NSLocalizedString("trackers_completed", comment: "CompletedTrackers"), completedCount),
+            (NSLocalizedString("average_value", comment: "Average"), average)
         ]
         hostingController?.rootView = StatCardView(data: data)
         

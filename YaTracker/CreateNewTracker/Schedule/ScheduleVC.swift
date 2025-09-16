@@ -21,7 +21,7 @@ final class ScheduleVC: UIViewController {
     private let tableView = MenuTableView()
     private lazy var doneButton: UIButton = {
         let button = DoneButton(type: .system)
-        button.setTitle("Готово", for: .normal)
+        button.setTitle(NSLocalizedString("done", comment: "DoneButton"), for: .normal)
         button.addTarget(self, action: #selector(didTapDoneButton), for: .touchUpInside)
         return button
     }()
@@ -56,7 +56,7 @@ final class ScheduleVC: UIViewController {
     private func setupUI() {
         view.backgroundColor = .ypWhite
         
-        headerTitle.text = "Расписание"
+        headerTitle.text = NSLocalizedString("schedule", comment: "ScheduleHeader")
         headerTitle.font = .systemFont(ofSize: 16, weight: .medium)
         headerTitle.textAlignment = .center
         headerTitle.translatesAutoresizingMaskIntoConstraints = false

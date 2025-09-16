@@ -15,10 +15,10 @@ enum FilterType: CaseIterable, Codable {
     
     var stringValue: String {
         return switch self {
-        case .all: "Все трекеры"
-        case .today: "Трекеры на сегодня"
-        case .completed: "Завершенные"
-        case .active: "Незавершенные"
+        case .all: NSLocalizedString("all_trackers", comment: "AllTrackers")
+        case .today: NSLocalizedString("trackers_for_today", comment: "TodayTrackers")
+        case .completed: NSLocalizedString("completed", comment: "CompletedTrackers")
+        case .active: NSLocalizedString("unfinished", comment: "UnfinishedTrackers")
         }
     }
 }

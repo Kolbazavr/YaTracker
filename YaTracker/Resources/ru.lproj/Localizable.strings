@@ -8,8 +8,8 @@
 
 "locale" = "ru_RU";
 
-"track_only_what_you_want" = "Отслеживайте только то, что хотите";
-"liters_of_water_and_yoga" = "Даже если это не литры воды и йога";
+"track_only_what_you_want" = "Отслеживайте только\nто, что хотите";
+"liters_of_water_and_yoga" = "Даже если это\nне литры воды и йога";
 "these_are_the_technologies" = "Вот это технологии!";
 "habits_and_events_can_be_combined" = "Привычки и события можно\nобъединить по смыслу";
 "there_is_nothing_to_analyze_yet" = "Анализировать пока нечего";
@@ -68,10 +68,12 @@
 "average_value" = "Среднее значение";
 
 "cancel_title" = "Отменить";
-"are_you_sure_you_want_to_delete_the_tracker" = "Удалить привычку?";
+"are_you_sure_you_want_to_delete_the_tracker" = "Уверены что хотите удалить трекер?";
 "are_you_sure_you_want_to_delete_category" = "Удалить категорию?";
 
 "all_trackers" = "Все трекеры";
 "trackers_for_today" = "Трекеры на сегодня";
 "completed" = "Завершенные";
 "unfinished" = "Не завершенные";
+
+"save" = "Сохранить";

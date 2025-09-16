@@ -49,8 +49,8 @@ final class CreateTrackerVC: UIViewController {
         
         var message: String {
             return switch self {
-            case .nameLength(let limit): "Ограничение \(limit) символов"
-            case .nameExists: "Уже есть такая"
+            case .nameLength(let limit): String(format: NSLocalizedString("the_limit_is_N_characters", comment: "LimitWarning"), limit)
+            case .nameExists: NSLocalizedString("already_exists", comment: "AlreadyExistsWarning")
             }
         }
     }
@@ -66,14 +66,14 @@ final class CreateTrackerVC: UIViewController {
     
     private lazy var doneButton: UIButton = {
         let button = DoneButton(type: .system)
-        button.setTitle(isEditingTracker ? "Сохранить" : "Создать", for: .normal)
+        button.setTitle(isEditingTracker ? NSLocalizedString("save", comment: "Save") : NSLocalizedString("create", comment: "Create"), for: .normal)
         button.addTarget(self, action: #selector(didTapDoneButton), for: .touchUpInside)
         return button
     }()
     
     private lazy var cancelButton: UIButton = {
         let button = CancelButton(type: .system)
-        button.setTitle("Отменить", for: .normal)
+        button.setTitle(NSLocalizedString("cancel", comment: "Cancel"), for: .normal)
         button.addTarget(self, action: #selector(didTapCancelButton), for: .touchUpInside)
         return button
     }()
@@ -117,9 +117,9 @@ final class CreateTrackerVC: UIViewController {
         let selectedCategory = trackerStore.categoryName(with: trackerToEdit?.id)
         let scheduleDescription = isEditingTracker ? WeekDay.daysString(from: selectedWeekDays) : nil
         
-        let menuItem1: MenuItem = .textField(placeholder: "Введите название трекера", limit: maxTextLength, text: textFieldText)
-        let menuItem2: MenuItem = .navigationLink(title: "Категория", description: selectedCategory, destination: .categories)
-        let menuItem3: MenuItem = .navigationLink(title: "Расписание", description: scheduleDescription, destination: .schedule)
+        let menuItem1: MenuItem = .textField(placeholder: NSLocalizedString("enter_tracker_name", comment: "TrackerNamePlaceHolder"), limit: maxTextLength, text: textFieldText)
+        let menuItem2: MenuItem = .navigationLink(title: NSLocalizedString("category", comment: "CategoryMenuItem"), description: selectedCategory, destination: .categories)
+        let menuItem3: MenuItem = .navigationLink(title: NSLocalizedString("schedule", comment: "ScheduleMenuItem"), description: scheduleDescription, destination: .schedule)
         let menuItem4: MenuItem = .decorCollection(tracker: trackerToEdit) { [weak self] decor, isSelected in
             self?.didTapedOnDecor(decor, wasSelected: isSelected)
         }
@@ -257,7 +257,7 @@ extension CreateTrackerVC {
         tapRecognizer.cancelsTouchesInView = false
         view.addGestureRecognizer(tapRecognizer)
         
-        headerTitle.text = isEditingTracker ? "Редактирование привычки" : "Новая привычка"
+        headerTitle.text = isEditingTracker ? NSLocalizedString("edit_habit", comment: "EditHabitHeader") : NSLocalizedString("new_habit", comment: "NewHabitHeader")
         headerTitle.font = .systemFont(ofSize: 16, weight: .medium)
         headerTitle.textAlignment = .center
         headerTitle.translatesAutoresizingMaskIntoConstraints = false

@@ -17,7 +17,7 @@ final class DecorCollectionView: UICollectionView {
     var preSelectedDecor: [DecorType] = []
     
     private let allItems: [[DecorType]]
-    private let headers: [String] = ["Emoji", "Цвет"]
+    private let headers: [String] = ["Emoji", NSLocalizedString("color", comment: "ColorHeader")]
     
     init(emojis: [DecorType] = DecorType.allEmojis, colorsHex: [DecorType] = DecorType.allColors) {
         self.allItems = [emojis, colorsHex]

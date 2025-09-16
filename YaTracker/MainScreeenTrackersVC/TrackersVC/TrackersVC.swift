@@ -58,7 +58,7 @@ final class TrackersViewController: UIViewController {
     }()
     
     private lazy var searchTextField: SearchTextField = {
-        let searchTextField = SearchTextField(placeholder: "Поиск", maxLength: 15, onSearchAction: { [weak self] name in self?.search(.byName(name)) })
+        let searchTextField = SearchTextField(placeholder: NSLocalizedString("search", comment: "SearchText"), maxLength: 15, onSearchAction: { [weak self] name in self?.search(.byName(name)) })
         return searchTextField
     }()
     
@@ -86,7 +86,7 @@ final class TrackersViewController: UIViewController {
         let label = UILabel()
         label.font = .systemFont(ofSize: 34, weight: .bold)
         label.textColor = .ypBlack
-        label.text = "Трекеры"
+        label.text = NSLocalizedString("trackers", comment: "TrackersHeader")
         return label
     }()
     
@@ -95,7 +95,7 @@ final class TrackersViewController: UIViewController {
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .ypBlackDay
         label.textAlignment = .center
-        label.text = "Что будем отслеживать?"
+        label.text = NSLocalizedString("what_are_we_going_to_track", comment: "EmptyStateLabel")
         return label
     }()
     
@@ -162,11 +162,11 @@ final class TrackersViewController: UIViewController {
     }
     
     private func showDeleteAlert(for tracker: Tracker) {
-        let alert = UIAlertController(title: "Уверены что хотите удалить трекер?", message: nil, preferredStyle: .actionSheet)
-        let deleteAction = UIAlertAction(title: "Удалить", style: .destructive) { [weak self] _ in
+        let alert = UIAlertController(title: NSLocalizedString("are_you_sure_you_want_to_delete_the_tracker", comment: "DeleteTrackerAlert"), message: nil, preferredStyle: .actionSheet)
+        let deleteAction = UIAlertAction(title: NSLocalizedString("delete", comment: "DeleteAction"), style: .destructive) { [weak self] _ in
             self?.trackerStore.deleteTracker(withId: tracker.id)
         }
-        let cancelAction = UIAlertAction(title: "Отмена", style: .cancel)
+        let cancelAction = UIAlertAction(title: NSLocalizedString("cancel", comment: "CancelAction"), style: .cancel)
         alert.addAction(deleteAction)
         alert.addAction(cancelAction)
         present(alert, animated: true)

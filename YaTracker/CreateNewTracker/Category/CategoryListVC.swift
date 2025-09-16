@@ -145,7 +145,7 @@ final class CategoryListVC: UIViewController {
         tapRecognizer.cancelsTouchesInView = false
         view.addGestureRecognizer(tapRecognizer)
         
-        headerTitle.text = "Категория"
+        headerTitle.text = NSLocalizedString("category", comment: "CategoryHeader")
         headerTitle.font = .systemFont(ofSize: 16, weight: .medium)
         headerTitle.textAlignment = .center
         headerTitle.translatesAutoresizingMaskIntoConstraints = false
