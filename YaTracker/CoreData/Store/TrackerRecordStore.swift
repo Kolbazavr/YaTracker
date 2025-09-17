@@ -147,7 +147,7 @@ final class TrackerRecordStore: NSObject, TrackerRecordStoreProtocol {
         
         var longestStreak = 0
         var currentStreak = 0
-        var previousDate: Date? = nil
+        var previousDate: Date?
         
         for (date, isPerfect) in dateStatuses {
             if isPerfect {

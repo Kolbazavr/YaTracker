@@ -35,7 +35,7 @@ struct StatCardView: View {
                 .padding(12)
             }
             .frame(height: 90)
-            .padding([.leading, .trailing], 16)
+            .padding(.horizontal, 16)
         }
         .edgesIgnoringSafeArea(.all)
         .onAppear {
