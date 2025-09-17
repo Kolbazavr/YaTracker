@@ -1,0 +1,79 @@
+/* 
+  Localizable.strings
+  YaTracker
+
+  Created by ANTON ZVERKOV on 16.09.2025.
+  
+*/
+
+"locale" = "en_EN";
+
+"track_only_what_you_want" = "Track only what you want";
+"liters_of_water_and_yoga" = "Even if it's not liters of water or yoga";
+"these_are_the_technologies" = "Technologia!";
+"habits_and_events_can_be_combined" = "Habits and events can be \ncombined in meaning";
+"there_is_nothing_to_analyze_yet" = "There is nothing to analyze yet";
+"nothing_was_found" = "Nothing was found";
+
+"search" = "Search";
+"what_are_we_going_to_track" = "What are we going to track?";
+
+"done" = "Done";
+"cancel" = "Cancel";
+"create" = "Create";
+"filters" = "Filters";
+"add_a_category" = "Add category";
+
+"edit" = "Edit";
+"delete" = "Delete";
+
+"monday" = "Monday";
+"tuesday" = "Tuesday";
+"wednesday" = "Wednesday";
+"thursday" = "Thursday";
+"friday" = "Friday";
+"saturday" = "Saturday";
+"sunday" = "Sunday";
+
+"monday_short" = "Mon";
+"tuesday_short" = "Tue";
+"wednesday_short" = "Wed";
+"thursday_short" = "Thu";
+"friday_short" = "Fri";
+"saturday_short" = "Sat";
+"sunday_short" = "Sun";
+
+"every_day" = "Every day";
+
+"trackers" = "Trackers";
+"statistics" = "Statistics";
+"new_habit" = "New Habit";
+"edit_habit" = "Habit Edition";
+"edit_category" = "Category Edition";
+"new_category" = "New Category";
+"category" = "Category";
+"schedule" = "Schedule";
+
+"emoji" = "Emoji";
+"color" = "Color";
+
+"enter_tracker_name" = "Enter tracker name";
+"enter_category_name" = "Enter category name";
+"the_limit_is_N_characters" = "%d characters limit";
+"already_exists" = "Already exists";
+
+"best_period" = "Longest streak";
+"ideal_days" = "Perfect days";
+"trackers_completed" = "Trackers completed";
+"average_value" = "Average";
+
+"cancel_title" = "Cancel";
+"are_you_sure_you_want_to_delete_the_tracker" = "Delete tracker?";
+"are_you_sure_you_want_to_delete_category" = "Delete category?";
+
+"all_trackers" = "All trackers";
+"trackers_for_today" = "Trackers for today";
+"completed" = "Completed";
+"unfinished" = "Unfinished";
+
+"save" = "Save";

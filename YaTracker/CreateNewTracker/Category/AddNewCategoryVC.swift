@@ -16,7 +16,7 @@ final class AddNewCategoryVC: UIViewController  {
     
     private lazy var doneButton: UIButton = {
         let button = DoneButton(type: .system)
-        button.setTitle("Готово", for: .normal)
+        button.setTitle(NSLocalizedString("done", comment: "DoneButton"), for: .normal)
         button.addTarget(self, action: #selector(didTapDoneButton), for: .touchUpInside)
         return button
     }()
@@ -54,7 +54,7 @@ final class AddNewCategoryVC: UIViewController  {
     }
     
     private func setupTableViewItems() {
-        let menuItem: MenuItem = .textField(placeholder: "Введите название категории", limit: viewModel.maxNameLength, text: viewModel.categoryToRename)
+        let menuItem: MenuItem = .textField(placeholder: NSLocalizedString("enter_category_name", comment: "enter_category_name_placeholder"), limit: viewModel.maxNameLength, text: viewModel.categoryToRename)
         tableView.addMenuItems([menuItem])
         tableView.menuTextFieldDelegate = self
         tableView.menuSelectionDelegate = self
@@ -80,7 +80,7 @@ final class AddNewCategoryVC: UIViewController  {
         tapRecognizer.cancelsTouchesInView = false
         view.addGestureRecognizer(tapRecognizer)
         
-        headerTitle.text = viewModel.categoryToRename == nil ? "Новая категория" : "Редактирование категории"
+        headerTitle.text = viewModel.categoryToRename == nil ? NSLocalizedString("add_a_category", comment: "AddCategoryHeader") : NSLocalizedString("edit_category", comment: "EditCategoryHeader")
         headerTitle.font = .systemFont(ofSize: 16, weight: .medium)
         headerTitle.textAlignment = .center
         headerTitle.translatesAutoresizingMaskIntoConstraints = false

@@ -13,7 +13,7 @@ enum WeekDay: Int, CaseIterable, Comparable {
     }
     
     static func daysString(from weekdays: Set<WeekDay>) -> String {
-        weekdays.count == 7 ? "Каждый день" : weekdays.sorted().map { $0.shortName } .joined(separator: ", ")
+        weekdays.count == 7 ? NSLocalizedString("every_day", comment: "EveryDay") : weekdays.sorted().map { $0.shortName } .joined(separator: ", ")
     }
     
     var bitValue: Int16 { 1 << self.sortOrder }
@@ -33,25 +33,25 @@ enum WeekDay: Int, CaseIterable, Comparable {
     
     var shortName: String {
         return switch self {
-        case .monday: "Пн"
-        case .tuesday: "Вт"
-        case .wednesday: "Ср"
-        case .thursday: "Чт"
-        case .friday: "Пт"
-        case .saturday: "Сб"
-        case .sunday:  "Вс"
+        case .monday: NSLocalizedString("monday_short", comment: "")
+        case .tuesday: NSLocalizedString("tuesday_short", comment: "")
+        case .wednesday: NSLocalizedString("wednesday_short", comment: "")
+        case .thursday: NSLocalizedString("thursday_short", comment: "")
+        case .friday: NSLocalizedString("friday_short", comment: "")
+        case .saturday: NSLocalizedString("saturday_short", comment: "")
+        case .sunday: NSLocalizedString("sunday_short", comment: "")
         }
     }
     
     var longName: String {
         return switch self {
-        case .monday: "Понедельник"
-        case .tuesday: "Вторник"
-        case .wednesday: "Среда"
-        case .thursday: "Четверг"
-        case .friday: "Пятница"
-        case .saturday: "Суббота"
-        case .sunday:  "Воскресенье"
+        case .monday: NSLocalizedString("monday", comment: "")
+        case .tuesday: NSLocalizedString("tuesday", comment: "")
+        case .wednesday: NSLocalizedString("wednesday", comment: "")
+        case .thursday: NSLocalizedString("thursday", comment: "")
+        case .friday: NSLocalizedString("friday", comment: "")
+        case .saturday: NSLocalizedString("saturday", comment: "")
+        case .sunday:  NSLocalizedString("sunday", comment: "")
         }
     }
     

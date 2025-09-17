@@ -11,8 +11,8 @@ final class OnboardingVC: UIPageViewController {
     
     var onSkip: (() -> Void)?
     
-    let firstPageText = "Отслеживайте только\nто, что хотите"
-    let secondPageText = "Даже если это\nне литры воды и йога"
+    let firstPageText = NSLocalizedString("track_only_what_you_want", comment: "Onboarding1")
+    let secondPageText = NSLocalizedString("liters_of_water_and_yoga", comment: "Onboarding1")
     
     private lazy var pages: [UIViewController] = {
         let first = BackgroundVC(image: UIImage(resource: .onboarding1), text: firstPageText, isEyesCrackerOn: true)
@@ -31,7 +31,7 @@ final class OnboardingVC: UIPageViewController {
     
     private lazy var skipButton: UIButton = {
         let button = DoneButton(type: .system)
-        button.setTitle("Вот это технологии!", for: .normal)
+        button.setTitle(NSLocalizedString("these_are_the_technologies", comment: ""), for: .normal)
         button.addTarget(self, action: #selector(skipButtonTapped), for: .touchUpInside)
         return button
     }()

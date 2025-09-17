@@ -42,7 +42,9 @@ final class CalendarView: UIView {
         isHidden = true
         calendarSelection = UICalendarSelectionMultiDate(delegate: self)
         calendar.selectionBehavior = calendarSelection!
-        calendar.backgroundColor = .ypWhite.withAlphaComponent(0.8)
+        calendar.backgroundColor = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark ? .ypBackground.withAlphaComponent(0.65) : .ypWhite.withAlphaComponent(0.8)
+        }
         
         calendar.calendar = .current
         calendar.locale = .current

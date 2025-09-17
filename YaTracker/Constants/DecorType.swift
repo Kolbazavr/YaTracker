@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum DecorType {
+enum DecorType: Equatable {
     case emoji(String)
     case colorHex(String)
     

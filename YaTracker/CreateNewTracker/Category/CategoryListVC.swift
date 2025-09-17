@@ -39,7 +39,7 @@ final class CategoryListVC: UIViewController {
         return label
     }()
 
-    init(selectedCategory: String? = nil, categoryStore: TrackerCategoryStore, delegate: CategoryListVCDelegate? = nil) {
+    init(selectedCategory: String? = nil, categoryStore: TrackerCategoryStoreProtocol, delegate: CategoryListVCDelegate? = nil) {
         self.viewModel = CategoryListViewModel(categoryStore: categoryStore, preselectedCategoryTitle: selectedCategory)
         self.delegate = delegate
         super.init(nibName: nil, bundle: nil)
@@ -145,7 +145,7 @@ final class CategoryListVC: UIViewController {
         tapRecognizer.cancelsTouchesInView = false
         view.addGestureRecognizer(tapRecognizer)
         
-        headerTitle.text = "Категория"
+        headerTitle.text = NSLocalizedString("category", comment: "CategoryHeader")
         headerTitle.font = .systemFont(ofSize: 16, weight: .medium)
         headerTitle.textAlignment = .center
         headerTitle.translatesAutoresizingMaskIntoConstraints = false

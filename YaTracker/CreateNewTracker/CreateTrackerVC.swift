@@ -25,6 +25,9 @@ final class CreateTrackerVC: UIViewController {
     
     weak var delegate: CreateTrackerVCDelegate?
     
+    private var trackerToEdit: Tracker?
+    private var isEditingTracker: Bool { trackerToEdit != nil }
+    
     private var nameCheckingWorkItem: DispatchWorkItem?
     private var trackerName: String?
     private var selectedWeekDays: Set<WeekDay> = []
@@ -33,8 +36,8 @@ final class CreateTrackerVC: UIViewController {
     private var selectedCategory: String?
     private var footerView: UIView?
     
-    private let trackerStore: TrackerStore
-    private let categoryStore: TrackerCategoryStore
+    private let trackerStore: TrackerStoreProtocol
+    private let categoryStore: TrackerCategoryStoreProtocol
     private let maxTextLength: Int
     private let headerTitle = UILabel()
     private let tableView: MenuTableView
@@ -46,33 +49,44 @@ final class CreateTrackerVC: UIViewController {
         
         var message: String {
             return switch self {
-            case .nameLength(let limit): "Ограничение \(limit) символов"
-            case .nameExists: "Уже есть такая"
+            case .nameLength(let limit): String(format: NSLocalizedString("the_limit_is_N_characters", comment: "LimitWarning"), limit)
+            case .nameExists: NSLocalizedString("already_exists", comment: "AlreadyExistsWarning")
             }
         }
     }
     
+    private lazy var bigAssRecordsCountLabel: UILabel = {
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 32, weight: .bold)
+        label.textColor = .ypBlack
+        label.textAlignment = .center
+        label.numberOfLines = 1
+        return label
+    }()
+    
     private lazy var doneButton: UIButton = {
         let button = DoneButton(type: .system)
-        button.setTitle("Создать", for: .normal)
+        button.setTitle(isEditingTracker ? NSLocalizedString("save", comment: "Save") : NSLocalizedString("create", comment: "Create"), for: .normal)
         button.addTarget(self, action: #selector(didTapDoneButton), for: .touchUpInside)
         return button
     }()
     
     private lazy var cancelButton: UIButton = {
         let button = CancelButton(type: .system)
-        button.setTitle("Отменить", for: .normal)
+        button.setTitle(NSLocalizedString("cancel", comment: "Cancel"), for: .normal)
         button.addTarget(self, action: #selector(didTapCancelButton), for: .touchUpInside)
         return button
     }()
     
-    init(trackerStore: TrackerStore, categoryStore: TrackerCategoryStore, textLimit: Int = 38) {
+    init(trackerStore: TrackerStoreProtocol, categoryStore: TrackerCategoryStoreProtocol, textLimit: Int = 38, trackerToEdit: Tracker? = nil) {
         self.trackerStore = trackerStore
         self.categoryStore = categoryStore
         self.maxTextLength = textLimit
         self.tableView = MenuTableView(texFieldsLimit: self.maxTextLength)
         self.decorCollectionView = DecorCollectionView()
+        
         super.init(nibName: nil, bundle: nil)
+        setupEditMode(for: trackerToEdit)
     }
     
     required init?(coder: NSCoder) {
@@ -99,10 +113,14 @@ final class CreateTrackerVC: UIViewController {
     }
     
     private func setupTableViewItems() {
-        let menuItem1: MenuItem = .textField(placeholder: "Введите название трекера", limit: maxTextLength, text: nil)
-        let menuItem2: MenuItem = .navigationLink(title: "Категория", description: nil, destination: .categories)
-        let menuItem3: MenuItem = .navigationLink(title: "Расписание", description: nil, destination: .schedule)
-        let menuItem4: MenuItem = .decorCollection { [weak self] decor, isSelected in
+        let textFieldText = trackerToEdit?.name
+        let selectedCategory = trackerStore.categoryName(with: trackerToEdit?.id)
+        let scheduleDescription = isEditingTracker ? WeekDay.daysString(from: selectedWeekDays) : nil
+        
+        let menuItem1: MenuItem = .textField(placeholder: NSLocalizedString("enter_tracker_name", comment: "TrackerNamePlaceHolder"), limit: maxTextLength, text: textFieldText)
+        let menuItem2: MenuItem = .navigationLink(title: NSLocalizedString("category", comment: "CategoryMenuItem"), description: selectedCategory, destination: .categories)
+        let menuItem3: MenuItem = .navigationLink(title: NSLocalizedString("schedule", comment: "ScheduleMenuItem"), description: scheduleDescription, destination: .schedule)
+        let menuItem4: MenuItem = .decorCollection(tracker: trackerToEdit) { [weak self] decor, isSelected in
             self?.didTapedOnDecor(decor, wasSelected: isSelected)
         }
         
@@ -111,6 +129,16 @@ final class CreateTrackerVC: UIViewController {
         tableView.menuSelectionDelegate = self
         tableView.menuTextFieldDelegate = self
         tableView.addMenuItems(allMenuItems)
+    }
+    
+    private func setupEditMode(for tracker: Tracker?) {
+        guard let tracker else { return }
+        trackerToEdit = tracker
+        trackerName = tracker.name
+        selectedWeekDays = Set(tracker.schedule)
+        selectedCategory = trackerStore.categoryName(with: tracker.id)
+        selectedEmoji = tracker.emoji
+        selectedColor = tracker.colorHex
     }
     
     private func didTapedOnDecor(_ decor: DecorType, wasSelected: Bool) {
@@ -145,7 +173,7 @@ final class CreateTrackerVC: UIViewController {
         guard let trackerName, let selectedCategory, !selectedWeekDays.isEmpty else { return }
         
         let newTracker = Tracker(
-            id: UUID(),
+            id: trackerToEdit?.id ?? UUID(),
             name: trackerName,
             colorHex: selectedColor ?? "",
             emoji: selectedEmoji ?? "",
@@ -182,9 +210,16 @@ extension CreateTrackerVC: MenuTextFieldDelegate {
         nameCheckingWorkItem?.cancel()
         let newWorkItem = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            
             let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-            let nameIsAllowed = isOverLimit ? false : !trackerStore.checkTrackerNameExists(trimmedName)
+            
+            var nameIsAllowed: Bool = false
+            
+            if trimmedName == trackerToEdit?.name {
+                nameIsAllowed = true
+            } else {
+                nameIsAllowed = isOverLimit ? false : !trackerStore.checkTrackerNameExists(trimmedName)
+            }
+            
             trackerName = nameIsAllowed ? trimmedName : ""
             checkIsAllFieldsFilled()
             
@@ -222,7 +257,7 @@ extension CreateTrackerVC {
         tapRecognizer.cancelsTouchesInView = false
         view.addGestureRecognizer(tapRecognizer)
         
-        headerTitle.text = "Новая привычка"
+        headerTitle.text = isEditingTracker ? NSLocalizedString("edit_habit", comment: "EditHabitHeader") : NSLocalizedString("new_habit", comment: "NewHabitHeader")
         headerTitle.font = .systemFont(ofSize: 16, weight: .medium)
         headerTitle.textAlignment = .center
         headerTitle.translatesAutoresizingMaskIntoConstraints = false
@@ -231,12 +266,26 @@ extension CreateTrackerVC {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(tableView)
         
+        if isEditingTracker {
+            bigAssRecordsCountLabel.text = trackerStore.getCompletedTrackersCount(for: trackerToEdit!.id).dayStringRU
+            
+            bigAssRecordsCountLabel.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(bigAssRecordsCountLabel)
+            
+            NSLayoutConstraint.activate([
+                bigAssRecordsCountLabel.topAnchor.constraint(equalTo: headerTitle.bottomAnchor, constant: 0),
+                bigAssRecordsCountLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
+                bigAssRecordsCountLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
+                bigAssRecordsCountLabel.heightAnchor.constraint(equalToConstant: 38),
+            ])
+        }
+        
         NSLayoutConstraint.activate([
             headerTitle.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
             headerTitle.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             headerTitle.heightAnchor.constraint(equalToConstant: 79),
             
-            tableView.topAnchor.constraint(equalTo: headerTitle.bottomAnchor, constant: 0),
+            tableView.topAnchor.constraint(equalTo: isEditingTracker ? bigAssRecordsCountLabel.bottomAnchor : headerTitle.bottomAnchor, constant: isEditingTracker ? 40 : 0),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
             tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: 0),

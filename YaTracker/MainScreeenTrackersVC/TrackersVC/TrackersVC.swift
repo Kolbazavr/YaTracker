@@ -25,19 +25,22 @@ final class TrackersViewController: UIViewController {
     private var collectionView: UICollectionView!
     private var dataSource: TrackerDataSource!
     private var selectedDate: Date = Date().onlyDate
+    private var selectedFilter: FilterType?
+    
+    private let analyticsService = AnalyticsService()
 
-    private let trackerStore: TrackerStore
-    private let recordStore: TrackerRecordStore
-    private let categoryStore: TrackerCategoryStore
+    private let trackerStore: TrackerStoreProtocol
+    private let recordStore: TrackerRecordStoreProtocol
+    private let categoryStore: TrackerCategoryStoreProtocol
     
     private enum SearchCondition {
-        case byDay(WeekDay)
+        case byDate(Date)
         case byName(String)
     }
     
     private let headerHeight = CGFloat(30)
     
-    init(trackerStore: TrackerStore, recordStore: TrackerRecordStore, categoryStore: TrackerCategoryStore) {
+    init(trackerStore: TrackerStoreProtocol, recordStore: TrackerRecordStoreProtocol, categoryStore: TrackerCategoryStoreProtocol) {
         self.trackerStore = trackerStore
         self.recordStore = recordStore
         self.categoryStore = categoryStore
@@ -55,7 +58,7 @@ final class TrackersViewController: UIViewController {
     }()
     
     private lazy var searchTextField: SearchTextField = {
-        let searchTextField = SearchTextField(placeholder: "Поиск", maxLength: 15, onSearchAction: { [weak self] name in self?.search(.byName(name)) })
+        let searchTextField = SearchTextField(placeholder: NSLocalizedString("search", comment: "SearchText"), maxLength: 15, onSearchAction: { [weak self] name in self?.search(.byName(name)) })
         return searchTextField
     }()
     
@@ -63,6 +66,12 @@ final class TrackersViewController: UIViewController {
         let calendarView = CalendarView(frame: .zero)
         calendarView.calendarViewDelegate = self
         return calendarView
+    }()
+    
+    private lazy var filtersButton: UIButton = {
+        let button = FiltersButton(type: .system)
+        button.addTarget(self, action: #selector(showFilters), for: .touchUpInside)
+        return button
     }()
     
     private lazy var plusButton: UIButton = {
@@ -77,7 +86,7 @@ final class TrackersViewController: UIViewController {
         let label = UILabel()
         label.font = .systemFont(ofSize: 34, weight: .bold)
         label.textColor = .ypBlack
-        label.text = "Трекеры"
+        label.text = NSLocalizedString("trackers", comment: "TrackersHeader")
         return label
     }()
     
@@ -86,7 +95,7 @@ final class TrackersViewController: UIViewController {
         label.font = .systemFont(ofSize: 12, weight: .medium)
         label.textColor = .ypBlackDay
         label.textAlignment = .center
-        label.text = "Что будем отслеживать?"
+        label.text = NSLocalizedString("what_are_we_going_to_track", comment: "EmptyStateLabel")
         return label
     }()
     
@@ -111,12 +120,22 @@ final class TrackersViewController: UIViewController {
         tapDetector.isUserInteractionEnabled = false
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        analyticsService.report(model: MetricaModel(event: .open, screen: .main, item: .none))
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        analyticsService.report(model: MetricaModel(event: .close, screen: .main, item: .none))
+    }
+    
     private func setupStores() {
-        trackerStore.onChange = { [weak self] categories in
+        trackerStore.setup { [weak self] categories in
             self?.applySnapshot(for: categories)
             self?.showStub(categories.isEmpty)
         }
-        trackerStore.changeWeekDayFilter(to: WeekDay(from: selectedDate))
+        search(.byDate(selectedDate))
     }
     
     private func showStub(_ show: Bool) {
@@ -131,18 +150,30 @@ final class TrackersViewController: UIViewController {
         selectedDate = date.onlyDate
     }
     
-    private func search(_ condition: SearchCondition ) {
+    private func search(_ condition: SearchCondition) {
         tapDetector.isUserInteractionEnabled = true
         switch condition {
-        case .byDay(let weekDay):
-            trackerStore.changeWeekDayFilter(to: weekDay)
+        case .byDate(let date):
+            trackerStore.changeWeekDayFilter(for: date)
         case .byName(let name):
             trackerStore.changeNameFilter(to: name)
         }
+        filtersButton.isHidden = !trackerStore.isThereAnyTrackers(on: selectedDate)
     }
     
-    @objc private func addNewTracker() {
-        let createTrackerViewController = CreateTrackerVC(trackerStore: trackerStore, categoryStore: categoryStore)
+    private func showDeleteAlert(for tracker: Tracker) {
+        let alert = UIAlertController(title: NSLocalizedString("are_you_sure_you_want_to_delete_the_tracker", comment: "DeleteTrackerAlert"), message: nil, preferredStyle: .actionSheet)
+        let deleteAction = UIAlertAction(title: NSLocalizedString("delete", comment: "DeleteAction"), style: .destructive) { [weak self] _ in
+            self?.trackerStore.deleteTracker(withId: tracker.id)
+        }
+        let cancelAction = UIAlertAction(title: NSLocalizedString("cancel", comment: "CancelAction"), style: .cancel)
+        alert.addAction(deleteAction)
+        alert.addAction(cancelAction)
+        present(alert, animated: true)
+    }
+    
+    private func goToTrackerCreation(trackerToEdit: Tracker?) {
+        let createTrackerViewController = CreateTrackerVC(trackerStore: trackerStore, categoryStore: categoryStore, trackerToEdit: trackerToEdit)
         createTrackerViewController.delegate = self
         
         let navigationController = UINavigationController(rootViewController: createTrackerViewController)
@@ -151,10 +182,26 @@ final class TrackersViewController: UIViewController {
         present(navigationController, animated: true)
     }
     
+    @objc private func addNewTracker() {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .addTrack))
+        goToTrackerCreation(trackerToEdit: nil)
+    }
+    
     @objc private func dismissEditingThingys() {
         view.endEditing(true)
         if !calendarView.isHidden { hideCalendar() }
         tapDetector.isUserInteractionEnabled = false
+    }
+    
+    @objc private func showFilters() {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .filter))
+        let filtersVC = FiltersVC(isForToday: selectedDate == Date().onlyDate, selectedFilter: selectedFilter)
+        filtersVC.delegate = self
+        
+        let navigationController = UINavigationController(rootViewController: filtersVC)
+        navigationController.modalPresentationStyle = .pageSheet
+        navigationController.navigationBar.isHidden = true
+        present(navigationController, animated: true)
     }
 }
 
@@ -200,14 +247,42 @@ extension TrackersViewController: CalendarViewDelegate {
     func didSelectDate(_ date: Date) {
         selectedDate = date.onlyDate
         dateTextField.setDate(date)
-        search(.byDay(WeekDay(from: date)))
+        search(.byDate(selectedDate))
         hideCalendar()
     }
 }
 
 extension TrackersViewController: TrackerCellDelegate {
+    func didTapEdit(_ tracker: Tracker) {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .edit))
+        goToTrackerCreation(trackerToEdit: tracker)
+    }
+    
+    func didTapDelete(_ tracker: Tracker) {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .delete))
+        showDeleteAlert(for: tracker)
+    }
+    
     func didTapTrackerCell(with tracker: Tracker) {
+        analyticsService.report(model: MetricaModel(event: .click, screen: .main, item: .track))
         recordStore.toggleRecord(for: tracker, on: selectedDate)
+    }
+}
+
+extension TrackersViewController: FiltersVCDelegate {
+    func filtersVC(_ vc: FiltersVC, didSelectFilter filter: FilterType) {
+        
+        selectedFilter = filter
+        
+        let selectedCompletionState: Bool? = switch filter {
+        case .all, .today: nil
+        case .completed: true
+        case .active: false
+        }
+        
+        trackerStore.setCompletionStateForFilter(selectedCompletionState, for: selectedDate)
+        searchTextField.text = nil
+        didSelectDate(filter == .today ? Date() : selectedDate)
     }
 }
 
@@ -275,6 +350,7 @@ extension TrackersViewController {
         collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout())
         collectionView.backgroundColor = .ypWhite
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+        collectionView.contentInset = .init(top: 0, left: 0, bottom: 90, right: 0)
         view.insertSubview(collectionView, belowSubview: tapDetector)
         
         emptyStateImageView.translatesAutoresizingMaskIntoConstraints = false
@@ -308,7 +384,7 @@ extension TrackersViewController {
         tapRecognizer.cancelsTouchesInView = false
         tapDetector.addGestureRecognizer(tapRecognizer)
         
-        [searchTextField, trackersLabel, tapDetector, topStackView, calendarView].forEach {
+        [searchTextField, trackersLabel, tapDetector, topStackView, calendarView, filtersButton].forEach {
             view.addSubview($0)
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
@@ -340,6 +416,11 @@ extension TrackersViewController {
             calendarView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             calendarView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             calendarView.heightAnchor.constraint(greaterThanOrEqualToConstant: 325),
+            
+            filtersButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16),
+            filtersButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 130),
+            filtersButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -130),
+            filtersButton.heightAnchor.constraint(equalToConstant: 50),
             ])
     }
 }

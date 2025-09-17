@@ -8,7 +8,16 @@
 import CoreData
 import UIKit
 
-final class TrackerCategoryStore: NSObject {
+protocol TrackerCategoryStoreProtocol {
+    func setup(onChange action: @escaping ([TrackerCategory]) -> Void)
+    func fetchCategories() -> [TrackerCategory]
+    func checkCategoryNameExists(_ title: String) -> Bool
+    func renameCategory(with title: String, to newTitle: String)
+    func createEmptyCategory(withName name: String)
+    func deleteCategory(withName name: String)
+}
+
+final class TrackerCategoryStore: NSObject, TrackerCategoryStoreProtocol {
     
     private var onChange: (([TrackerCategory]) -> Void)?
     

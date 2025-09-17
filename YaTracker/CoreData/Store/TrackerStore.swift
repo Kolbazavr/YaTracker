@@ -7,12 +7,30 @@
 
 import CoreData
 
-final class TrackerStore: NSObject {
+protocol TrackerStoreProtocol {
+//    var onChange: (([TrackerCategory]) -> Void)? { get set }
+    func setup(onChange action: @escaping ([TrackerCategory]) -> Void)
+    func changeWeekDayFilter(for date: Date)
+    func changeNameFilter(to name: String)
+    func setCompletionStateForFilter(_ isCompleted: Bool?, for date: Date)
+    func addTracker(_ tracker: Tracker, to categoryWithTitle: String)
+    func deleteTracker(withId id: UUID)
+    func getCompletedTrackersCount(for trackerId: UUID) -> Int
+    func checkTrackerNameExists(_ name: String) -> Bool
+    func isThereAnyTrackers(on date: Date) -> Bool
+    func categoryName(with trackerId: UUID?) -> String?
+    func isTrackerCompletedToday(_ trackerId: UUID, date: Date) -> Bool
+}
+
+final class TrackerStore: NSObject, TrackerStoreProtocol {
     
-    var onChange: (([TrackerCategory]) -> Void)?
+    private var onChange: (([TrackerCategory]) -> Void)?
     
     private var selectedWeekDay: WeekDay? = nil
     private var selectedName: String? = nil
+    private var selectedCompletionState: Bool? = nil
+    private var selectedCompletionDate: Date? = nil
+    
     private let context: NSManagedObjectContext
     
     private lazy var trackersFRC: NSFetchedResultsController<TrackerCoreData> = {
@@ -40,14 +58,24 @@ final class TrackerStore: NSObject {
         self.context = context
     }
     
-    func changeWeekDayFilter(to weekday: WeekDay) {
-        selectedWeekDay = weekday
+    func setup(onChange action: @escaping ([TrackerCategory]) -> Void) {
+        self.onChange = action
+    }
+    
+    func changeWeekDayFilter(for date: Date) {
+        selectedWeekDay = WeekDay(from: date)
+        selectedCompletionDate = date
         applyFiltersAndSearch()
     }
     
     func changeNameFilter(to name: String) {
         selectedName = name
         applyFiltersAndSearch()
+    }
+    
+    func setCompletionStateForFilter(_ isCompleted: Bool?, for date: Date) {
+        selectedCompletionState = isCompleted
+        selectedCompletionDate = date
     }
     
     func addTracker(_ tracker: Tracker, to categoryWithTitle: String) {
@@ -64,16 +92,39 @@ final class TrackerStore: NSObject {
                 return newCategory
             }()
             
-            let newTracker: TrackerCoreData = TrackerCoreData(context: self.context)
-            newTracker.id = tracker.id
-            newTracker.name = tracker.name
-            newTracker.colorHex = tracker.colorHex
-            newTracker.emoji = tracker.emoji
-            newTracker.isPinned = tracker.isPinned
-            newTracker.schedule = tracker.schedule.bitmask
-            newTracker.category = categoryToInsert
+            let trackerIdRequest: NSFetchRequest<TrackerCoreData> = TrackerCoreData.fetchRequest()
+            trackerIdRequest.predicate = NSPredicate(format: "id = %@", tracker.id as CVarArg)
+            trackerIdRequest.fetchLimit = 1
             
+            let trackerToSave = try? self.context.fetch(trackerIdRequest).first ?? {
+                TrackerCoreData(context: self.context)
+            }()
+            
+            guard let trackerToSave else { return }
+            
+            trackerToSave.id = tracker.id
+            trackerToSave.name = tracker.name
+            trackerToSave.colorHex = tracker.colorHex
+            trackerToSave.emoji = tracker.emoji
+            trackerToSave.isPinned = tracker.isPinned
+            trackerToSave.schedule = tracker.schedule.bitmask
+            trackerToSave.category = categoryToInsert
+
             saveContext()
+        }
+    }
+    
+    func deleteTracker(withId id: UUID) {
+        context.perform { [weak self] in
+            guard let self else { return }
+            
+            let request: NSFetchRequest<TrackerCoreData> = TrackerCoreData.fetchRequest()
+            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
+            request.fetchLimit = 1
+            
+            if let trackerToDelete = try? self.context.fetch(request).first {
+                context.delete(trackerToDelete)
+            }
         }
     }
     
@@ -89,6 +140,21 @@ final class TrackerStore: NSObject {
         request.fetchLimit = 1
         request.resultType = .managedObjectIDResultType
         return (try? context.count(for: request)) ?? 0 > 0
+    }
+    
+    func isThereAnyTrackers(on date: Date) -> Bool {
+        let request = NSFetchRequest<NSFetchRequestResult>(entityName: "TrackerCoreData")
+        request.predicate = NSPredicate(format: "(schedule & %d) != 0", WeekDay(from: date).bitValue)
+        request.fetchLimit = 1
+        request.resultType = .managedObjectIDResultType
+        return (try? context.count(for: request)) ?? 0 > 0
+    }
+    
+    func categoryName(with trackerId: UUID?) -> String? {
+        guard let trackerId else { return nil }
+        let request: NSFetchRequest<TrackerCoreData> = TrackerCoreData.fetchRequest()
+        request.predicate = NSPredicate(format: "id = %@", trackerId as CVarArg)
+        return try? context.fetch(request).first?.category?.title
     }
     
     func isTrackerCompletedToday(_ trackerId: UUID, date: Date) -> Bool {
@@ -115,6 +181,11 @@ final class TrackerStore: NSObject {
         
         if let selectedName, !selectedName.isEmpty {
             predicates.append(NSPredicate(format: "name CONTAINS[cd] %@", selectedName))
+        }
+        
+        if let selectedCompletionState {
+            let format = selectedCompletionState ? "SUBQUERY(records, $r, $r.completionDate == %@).@count > 0" : "SUBQUERY(records, $r, $r.completionDate == %@).@count == 0"
+            predicates.append(NSPredicate(format: format, (selectedCompletionDate ?? Date().onlyDate) as CVarArg))
         }
         
         trackersFRC.fetchRequest.predicate = predicates.isEmpty ? nil : NSCompoundPredicate(andPredicateWithSubpredicates: predicates)

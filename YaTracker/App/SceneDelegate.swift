@@ -60,7 +60,7 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func createTrackersVC() -> UIViewController {
         let vc = TrackersViewController(trackerStore: trackerStore, recordStore: recordStore, categoryStore: categoryStore)
         vc.tabBarItem = UITabBarItem(
-            title: "Трекеры",
+            title: NSLocalizedString("trackers", comment: "TackersTabBarItemTitle"),
             image: UIImage(resource: .tabBarTrackers),
             selectedImage: nil
         )
@@ -68,9 +68,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     private func createStatisticsVC() -> UIViewController {
-        let vc = StatisticsVC()
+        let vc = StatisticsVC(recordStore: recordStore)
         vc.tabBarItem = UITabBarItem(
-            title: "Статистика",
+            title: NSLocalizedString("statistics", comment: "StatisticsTabBarItemTitle"),
             image: UIImage(resource: .tabBarStatistics),
             selectedImage: nil
         )

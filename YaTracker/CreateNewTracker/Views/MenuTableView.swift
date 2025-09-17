@@ -61,6 +61,9 @@ final class MenuTableView: UITableView {
         tableHeaderView = UIView(frame: CGRect(x: 0, y: 0, width: bounds.width, height: CGFloat.leastNonzeroMagnitude))
 
         separatorInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        separatorColor = UIColor { traitCollection in
+            traitCollection.userInterfaceStyle == .dark ? .ypWhite : UIColor.separator
+        }
         
         dataSource = self
         delegate = self
@@ -69,9 +72,14 @@ final class MenuTableView: UITableView {
     private func precreateAllCells() -> [[UITableViewCell]] {
         allMenuItems.map { section in
             section.map { item in
-                if case let .decorCollection(onDecorSelected: onDecorSelected) = item {
+                if case let .decorCollection(tracker: tracker, onDecorSelected: onDecorSelected) = item {
                     let cell = MenuDecorCell(style: .default, reuseIdentifier: nil)
-                    cell.configure(onDecorSelected: onDecorSelected)
+                    if let tracker {
+                        let decorThings = [DecorType.emoji(tracker.emoji), DecorType.colorHex(tracker.colorHex)]
+                        cell.configure(selectedDecor: decorThings, onDecorSelected: onDecorSelected)
+                    } else {
+                        cell.configure(selectedDecor: [], onDecorSelected: onDecorSelected)
+                    }
                     return cell
                 } else {
                     let cell = MenuCell(style: .default, reuseIdentifier: nil)

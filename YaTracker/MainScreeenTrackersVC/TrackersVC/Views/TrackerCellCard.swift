@@ -9,6 +9,8 @@ import UIKit
 
 protocol TrackerCellDelegate: AnyObject {
     func didTapTrackerCell(with tracker: Tracker)
+    func didTapEdit(_ tracker: Tracker)
+    func didTapDelete(_ tracker: Tracker)
 }
 
 final class TrackerCellCard: UICollectionViewCell {
@@ -17,6 +19,7 @@ final class TrackerCellCard: UICollectionViewCell {
     
     weak var delegate: TrackerCellDelegate?
     
+    private var contextMenuInteraction: UIContextMenuInteraction!
     private var tracker: Tracker?
     private var isCompletedToday: Bool = false
     private var isPinned: Bool = false
@@ -75,6 +78,7 @@ final class TrackerCellCard: UICollectionViewCell {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
+        setupContextMenu()
     }
     
     required init?(coder: NSCoder) {
@@ -87,6 +91,7 @@ final class TrackerCellCard: UICollectionViewCell {
     }
     
     func configure(with tracker: Tracker, isCompletedToday: Bool, daysCompleted: Int, enableButton: Bool) {
+        layer.cornerRadius = 16
         self.tracker = tracker
         colorBackgroundView.backgroundColor = UIColor(hexString: tracker.colorHex)
         trackerNameLabel.text = tracker.name
@@ -98,7 +103,12 @@ final class TrackerCellCard: UICollectionViewCell {
         doneButton.setImage(UIImage(resource: isCompletedToday ? .cellCheckMark : .cellPlus), for: .normal)
         doneButton.tintColor = .ypWhite
         doneButton.isEnabled = enableButton
-        daysCounterLabel.text = daysCompleted.dayStringRU
+        daysCounterLabel.text = String.localizedStringWithFormat(NSLocalizedString("numberOfDays", comment: "CompletedDays"), daysCompleted)
+    }
+    
+    private func setupContextMenu() {
+        contextMenuInteraction = UIContextMenuInteraction(delegate: self)
+        colorBackgroundView.addInteraction(contextMenuInteraction)
     }
     
     private func setupUI() {
@@ -169,5 +179,25 @@ final class TrackerCellCard: UICollectionViewCell {
             cellStackView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             cellStackView.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor)
         ])
+    }
+}
+
+extension TrackerCellCard: UIContextMenuInteractionDelegate {
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in self.createContextMenu() }
+    }
+    
+    private func createContextMenu() -> UIMenu {
+        let editAction = UIAction(title: NSLocalizedString("edit", comment: "EditAction")) { [weak self] _ in
+            guard let tracker = self?.tracker else { return }
+            self?.delegate?.didTapEdit(tracker)
+        }
+        
+        let deleteAction = UIAction(title: NSLocalizedString("delete", comment: "DeleteAction"), attributes: .destructive) { [weak self] _ in
+            guard let tracker = self?.tracker else { return }
+            self?.delegate?.didTapDelete(tracker)
+        }
+        
+        return UIMenu(title: "", children: [editAction, deleteAction])
     }
 }
